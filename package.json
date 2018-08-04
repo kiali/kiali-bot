@@ -14,20 +14,29 @@
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "dev": "nodemon --exec \"npm start\"",
+    "dev": "nodemon --exec \"(npm run build || exit 1) && npm start || exit 1\"",
     "start": "probot run ./lib/index.js",
-    "lint": "standard --fix",
-    "test": "jest && standard",
-    "test:watch": "jest --watch --notify --notifyMode=change --coverage"
+    "lint": "standard --fix"
   },
   "dependencies": {
-    "probot": "^7.0.0"
+    "handlebars": "^4.0.11",
+    "jira-client": "^6.4.1",
+    "node-cmd": "^3.0.0",
+    "probot": "^7.0.0",
+    "tempfile": "^2.0.0"
   },
   "devDependencies": {
+    "@types/handlebars": "^4.0.39",
+    "@types/jest": "^23.3.1",
+    "@types/jira-client": "^6.4.0",
+    "@types/node": "^10.5.5",
+    "@types/tempfile": "^2.0.0",
+    "dotenv": "^6.0.0",
     "jest": "^22.4.3",
     "nodemon": "^1.17.2",
     "smee-client": "^1.0.2",
     "standard": "^10.0.3",
+    "ts-jest": "^23.1.2",
     "typescript": "^2.9.2"
   },
   "engines": {

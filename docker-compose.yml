@@ -1,0 +1,21 @@
+version: '3.0'
+
+services:
+  jira:
+    image: 'cptactionhank/atlassian-jira:latest'
+    ports:
+      - '8080:8080'
+    networks:
+      - kiali-bot
+  bot:
+    build: '.'
+    ports:
+      - '3000:3000'
+    networks:
+      - kiali-bot
+    volumes:
+      - ".:/src"
+    environment:
+      - 'JIRA_HOST=jira:8080'
+networks:
+  kiali-bot:
