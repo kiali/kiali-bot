@@ -21,15 +21,16 @@
     "test:watch": "jest --watch --notify --notifyMode=change --coverage"
   },
   "dependencies": {
+    "@types/nock": "^9.3.0",
     "handlebars": "^4.0.11",
     "jira-client": "^6.4.1",
-    "node-cmd": "^3.0.0",
     "nock": "^10.0.0",
-    "@types/nock": "^9.3.0",
+    "node-cmd": "^3.0.0",
     "probot": "^9.1.1",
     "tempfile": "^2.0.0"
   },
   "devDependencies": {
+    "@octokit/webhooks": "^5.3.3",
     "@types/handlebars": "^4.0.39",
     "@types/jest": "^24.0.0",
     "@types/jira-client": "^6.4.0",
