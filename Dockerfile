@@ -14,7 +14,7 @@ COPY package*.json ./
 RUN npm install
 
 COPY app.yml ./
-COPY lib ./
+COPY lib ./lib
 
 EXPOSE 3000
 CMD npm run start
