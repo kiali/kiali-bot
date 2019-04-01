@@ -9,6 +9,6 @@ export = (app: Application) => {
   ]
 
   behaviors.forEach((Behavior) => {
-    new Behavior(app)
+    new Behavior(app) // eslint-disable-line no-new
   })
 }
