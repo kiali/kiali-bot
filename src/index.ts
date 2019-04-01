@@ -1,9 +1,11 @@
 import { Application } from 'probot'
-import JiraIssueExporter from './behaviors/JiraIssueExporter'
+import VersionBumpMerger from './behaviors/VersionBumpMerger'
+// import JiraIssueExporter from './behaviors/JiraIssueExporter'
 
 export = (app: Application) => {
   const behaviors = [
-    JiraIssueExporter
+    // JiraIssueExporter,
+    VersionBumpMerger
   ]
 
   behaviors.forEach((Behavior) => {
