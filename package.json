@@ -1,6 +1,6 @@
 {
   "name": "kiali-bot",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "A bot to manage the workflow for Kiali",
   "author": "Kiali Mantainers Team <kiali-dev@googlegroups.com> (https://kiali.io)",
   "license": "ISC",
