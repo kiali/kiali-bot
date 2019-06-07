@@ -1,16 +1,16 @@
-import { Application } from 'probot'
-import MilestoneSetter from './behaviors/MilestoneSetter'
-import VersionBumpMerger from './behaviors/VersionBumpMerger'
+import { Application } from 'probot';
+import MilestoneSetter from './behaviors/MilestoneSetter';
+import VersionBumpMerger from './behaviors/VersionBumpMerger';
 // import JiraIssueExporter from './behaviors/JiraIssueExporter'
 
-export = (app: Application) => {
+export = (app: Application): void => {
   const behaviors = [
     // JiraIssueExporter,
     MilestoneSetter,
-    VersionBumpMerger
-  ]
+    VersionBumpMerger,
+  ];
 
-  behaviors.forEach((Behavior) => {
-    new Behavior(app) // eslint-disable-line no-new
-  })
-}
+  behaviors.forEach(Behavior => {
+    new Behavior(app);
+  });
+};

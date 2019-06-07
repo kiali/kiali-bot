@@ -1,22 +1,28 @@
 {
   "name": "kiali-bot",
   "version": "0.2.0",
-  "description": "A bot to manage the workflow for Kiali",
+  "description": "A bot to manage the workflow for Kiali Project",
   "author": "Kiali Mantainers Team <kiali-dev@googlegroups.com> (https://kiali.io)",
-  "license": "ISC",
+  "license": "SEE LICENSE IN LICENSE",
   "repository": "https://github.com/kiali/kiali-bot.git",
   "homepage": "https://github.com/kiali/kiali-bot",
   "bugs": "https://github.com/kiali/kiali-bot/issues",
+  "private": true,
   "keywords": [
     "probot",
     "github",
     "probot-app"
   ],
+  "files": [
+    "lib/**/*"
+  ],
+  "main": "lib/index.js",
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "dev": "nodemon --exec \"(npm run build || exit 1) && (npm start || exit 1)\"",
     "start": "probot run ./lib/index.js",
     "lint": "standard **/*.ts --fix",
+    "eslint": "eslint '{src,test}/**/*.ts'",
     "test": "jest && standard **/*.ts",
     "test:watch": "jest --watch --notify --notifyMode=change --coverage"
   },
@@ -38,10 +44,14 @@
     "@types/jira-client": "^6.4.0",
     "@types/node": "^11.9.0",
     "@types/tempfile": "^2.0.0",
-    "@typescript-eslint/eslint-plugin": "^1.5.0",
-    "@typescript-eslint/parser": "^1.5.0",
+    "@typescript-eslint/eslint-plugin": "^1.9.0",
+    "@typescript-eslint/parser": "^1.9.0",
+    "eslint": "^5.16.0",
+    "eslint-config-prettier": "^4.3.0",
+    "eslint-plugin-prettier": "^3.1.0",
     "jest": "^24.0.0",
     "nodemon": "^1.17.2",
+    "prettier": "^1.17.1",
     "smee-client": "^1.0.2",
     "standard": "^12.0.1",
     "ts-jest": "^24.0.0",
@@ -56,7 +66,7 @@
     ],
     "parser": "@typescript-eslint/parser",
     "plugins": [
-      "@typescript-eslint"
+      "@typescript-eslint/eslint-plugin"
     ]
   },
   "jest": {
