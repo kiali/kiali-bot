@@ -2,6 +2,7 @@ import * as Mailjet from 'node-mailjet';
 import { Application, Context } from 'probot';
 import { WebhookPayloadRelease } from '@octokit/webhooks';
 import { Behavior } from '../types/generics';
+import { htmlNotification, plainTextNotification } from '../data/ReleaseNotificationMessages';
 
 export default class ReleaseNotifier extends Behavior {
   private static LOG_FIELDS = { behavior: 'ReleaseNotifier' };
@@ -59,12 +60,13 @@ export default class ReleaseNotifier extends Behavior {
               Name: process.env.MJ_TO_NAME,
             },
           ],
-          TemplateID: Number(process.env.MJ_TEMPLATE_ID),
           TemplateLanguage: true,
           Subject: `Kiali ${tagName} just released`,
           Variables: {
             version: tagName,
           },
+          TextPart: plainTextNotification,
+          HTMLPart: htmlNotification,
         },
       ],
     });
