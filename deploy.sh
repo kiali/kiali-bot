@@ -7,7 +7,7 @@ openssl aes-256-cbc -K $encrypted_a9e5b11a096a_key -iv $encrypted_a9e5b11a096a_i
 eval $(ssh-agent -s)
 chmod 600 ./.travis/deploy-key
 echo -e "\nHost $DEPLOY_SERVER\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
-ssh-add -q ./.travis/deploy-key
+ssh-add ./.travis/deploy-key
 
 # DEPLOY
 #
