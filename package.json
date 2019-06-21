@@ -22,7 +22,7 @@
     "dev": "nodemon --exec \"(npm run build || exit 1) && (npm start || exit 1)\"",
     "start": "probot run ./lib/index.js",
     "lint": "eslint --fix '{src,test}/**/*.ts'",
-    "test": "jest && standard **/*.ts",
+    "test": "jest && eslint '{src,test}/**/*.ts'",
     "test:watch": "jest --watch --notify --notifyMode=change --coverage"
   },
   "dependencies": {
