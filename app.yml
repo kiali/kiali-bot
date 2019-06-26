@@ -16,7 +16,7 @@ default_events:
 - check_run
 - check_suite
 # - commit_comment
-# - create
+- create
 # - delete
 # - deployment
 # - deployment_status
@@ -98,7 +98,7 @@ default_permissions:
 
   # Commit statuses.
   # https://developer.github.com/v3/apps/permissions/#permission-on-statuses
-  statuses: read
+  statuses: write
 
   # Organization members and teams.
   # https://developer.github.com/v3/apps/permissions/#permission-on-members
@@ -126,7 +126,7 @@ default_permissions:
 
 
 # The name of the GitHub App. Defaults to the name specified in package.json
-name: kiali
+name: kiali-bot
 
 # The homepage of your GitHub App.
 # url: https://example.com/
