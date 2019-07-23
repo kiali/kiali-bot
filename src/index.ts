@@ -11,13 +11,12 @@ export = (app: Application): void => {
   setProbotApp(app);
   setConfigManager(new ConfigManager(app));
 
-  // TODO: Restore
   const behaviors = [
     // JiraIssueExporter,
     PrChecker,
-    // MilestoneSetter,
-    // ReleaseNotifier,
-    // VersionBumpMerger,
+    MilestoneSetter,
+    ReleaseNotifier,
+    VersionBumpMerger,
   ];
 
   behaviors.forEach(
