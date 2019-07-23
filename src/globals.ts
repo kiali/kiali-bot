@@ -1,14 +1,14 @@
 import { Application } from 'probot';
-import {ConfigManager} from "./ConfigManager";
+import { ConfigManager } from './ConfigManager';
 
 let probotApp: Application | null = null;
 let configManager: ConfigManager | null = null;
 
-export function setProbotApp(app: Application) {
+export function setProbotApp(app: Application): void {
   probotApp = app;
 }
 
-export function setConfigManager(configMgr: ConfigManager) {
+export function setConfigManager(configMgr: ConfigManager): void {
   configManager = configMgr;
 }
 

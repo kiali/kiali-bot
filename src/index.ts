@@ -4,8 +4,8 @@ import MilestoneSetter from './behaviors/MilestoneSetter';
 import ReleaseNotifier from './behaviors/ReleaseNotifier';
 import VersionBumpMerger from './behaviors/VersionBumpMerger';
 // import JiraIssueExporter from './behaviors/JiraIssueExporter'
-import {ConfigManager} from "./ConfigManager";
-import {setConfigManager, setProbotApp} from './globals';
+import { ConfigManager } from './ConfigManager';
+import { setConfigManager, setProbotApp } from './globals';
 
 export = (app: Application): void => {
   setProbotApp(app);
@@ -20,7 +20,9 @@ export = (app: Application): void => {
     // VersionBumpMerger,
   ];
 
-  behaviors.forEach(Behavior => {
-    new Behavior(app);
-  });
+  behaviors.forEach(
+    (Behavior): void => {
+      new Behavior(app);
+    },
+  );
 };

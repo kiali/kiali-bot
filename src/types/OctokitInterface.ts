@@ -3,13 +3,11 @@ export interface Repo {
   repo: string;
 }
 
-export type WebhookAssociatedPrList = any[];
-
 export class UnexpectedResponseError extends Error {
   public readonly actualStatusCode: number;
   public readonly expectedStatusCode: number;
 
-  public constructor(actualStatusCode: number, expectedStatusCode: number, ...params: any[]) {
+  public constructor(actualStatusCode: number, expectedStatusCode: number, ...params: string[]) {
     super(...params);
 
     if (Error.captureStackTrace) {

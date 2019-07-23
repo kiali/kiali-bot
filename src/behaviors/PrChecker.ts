@@ -119,7 +119,10 @@ export default class PrChecker extends Behavior {
     this.createCheckRun(context.github, context.repo({ head_sha: context.payload.pull_request.head.sha }));
   };
 
-  private createCheckRun = async (api: GitHubAPI, commit: { owner: string; repo: string; head_sha: string }) => {
+  private createCheckRun = async (
+    api: GitHubAPI,
+    commit: { owner: string; repo: string; head_sha: string },
+  ): Promise<void> => {
     try {
       const response = await api.checks.create({
         status: 'queued' as 'queued',
@@ -196,15 +199,15 @@ export default class PrChecker extends Behavior {
           const getReviewsParams = context.github.pulls.listReviews.endpoint.merge(listReviewsParams);
           for await (const reviews of context.github.paginate.iterator(getReviewsParams)) {
             checkResponseWith(reviews, { logFields: { phase: 'resolve reviews', ...logFields } });
-            reviews.data.forEach((val: PullsListReviewsResponseItem) => {
+            for (const val of reviews.data as PullsListReviewsResponseItem[]) {
               prReviews[val.user.login] = val.state;
-            });
+            }
           }
         }
 
         // Check if all required approvals are done
         const anyApprovedTest = (approvals: string[]): boolean =>
-          approvals.some(user => prReviews[user] && prReviews[user] === 'APPROVED');
+          approvals.some((user): boolean => prReviews[user] !== undefined && prReviews[user] === 'APPROVED');
 
         if (requiredApprovals.every(anyApprovedTest)) {
           conclusion = 'success';
@@ -250,9 +253,7 @@ export default class PrChecker extends Behavior {
       }
 
       const approvals: UserOrUserList[] = configs.checks.pull_requests.required_approvals;
-      const retVal = approvals.map(value => (typeof value === 'string' ? [value] : value));
-
-      return retVal;
+      return approvals.map((value): string[] => (typeof value === 'string' ? [value] : value));
     }
 
     return [];
