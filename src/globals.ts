@@ -1,9 +1,15 @@
 import { Application } from 'probot';
+import {ConfigManager} from "./ConfigManager";
 
 let probotApp: Application | null = null;
+let configManager: ConfigManager | null = null;
 
 export function setProbotApp(app: Application) {
   probotApp = app;
+}
+
+export function setConfigManager(configMgr: ConfigManager) {
+  configManager = configMgr;
 }
 
 export function getProbotApp(): Application {
@@ -11,4 +17,11 @@ export function getProbotApp(): Application {
     throw new Error('Probot app is unset');
   }
   return probotApp;
+}
+
+export function getConfigManager(): ConfigManager {
+  if (!configManager) {
+    throw new Error('ConfigManager is unset');
+  }
+  return configManager;
 }

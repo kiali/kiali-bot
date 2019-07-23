@@ -11,6 +11,8 @@ import { GitHubAPI } from 'probot/lib/github';
 import { Behavior } from '../types/generics';
 import { checkResponseStatus, checkResponseWith } from '../utils/OctokitUtils';
 import { getOrQueryPrsForCommit } from '../utils/PrQueries';
+import { UserOrUserList } from '../ConfigManager';
+import { getConfigManager } from '../globals';
 
 interface ReviewStatuses {
   [key: string]: string;
@@ -30,7 +32,7 @@ export default class PrChecker extends Behavior {
     app.on('pull_request_review.dismissed', this.pullRequestReviewEventHandler);
     app.on('pull_request_review.submitted', this.pullRequestReviewEventHandler);
 
-    // Listen when checks are OK to run
+    // Watch when checks should begin running
     app.on('check_run.created', this.doChecks);
 
     app.log.info('PrChecker behavior is initialized');
@@ -47,46 +49,68 @@ export default class PrChecker extends Behavior {
   };
 
   private pullRequestEventHandler = async (context: Context<WebhookPayloadPullRequest>): Promise<void> => {
+    if (!this.areChecksEnabled(context)) {
+      context.log.trace('Not running checks, because checker is disabled');
+      return;
+    }
+
     this.app.log.debug(PrChecker.LOG_FIELDS, `Queuing new PR checks (PR ${context.payload.pull_request.number})`);
     this.createCheckRun(context.github, context.repo({ head_sha: context.payload.pull_request.head.sha }));
   };
 
   private pullRequestReviewEventHandler = async (context: Context<WebhookPayloadPullRequestReview>): Promise<void> => {
+    if (!this.areChecksEnabled(context)) {
+      context.log.trace('Not running checks, because checker is disabled');
+      return;
+    }
+
+    // Bot actions are ignored
+    //   This is to avoid blocking VersionBumpMerger behavior (and generating a loop)
+    if (context.isBot) {
+      context.log.debug(`Ignoring review action in PR ${context.payload.pull_request.number} (ignoring bots)`);
+      return;
+    }
+
     const logFields = { pr_number: context.payload.pull_request.number, ...PrChecker.LOG_FIELDS };
 
-    // If submitted review is approved and user is from required users list, just
-    // mark checks as successful.
+    // In case required approvals list indicates that only one user is mandatory:
+    //   Mark checks as successful if submitted review is approved and user is
+    //   from required approvals list.
     if (
       (context.payload.action === 'edited' || context.payload.action === 'submitted') &&
       context.payload.review.state === 'approved'
     ) {
       try {
-        const requiredReviews = await this.findQeUsers();
-        if (requiredReviews.includes(context.payload.sender.login)) {
-          this.app.log.debug(logFields, `Creating successfull check (PR ${context.payload.pull_request.number})`);
+        const requiredApprovals = await this.findRequiredApprovals(context);
+        if (requiredApprovals.length === 1) {
+          const requiredReviews = requiredApprovals[0];
 
-          const response = await context.github.checks.create(
-            context.repo({
-              name: PrChecker.CHECK_NAME,
-              head_sha: context.payload.pull_request.head.sha,
-              status: 'completed' as 'completed',
-              conclusion: 'success' as 'success',
-              completed_at: moment().toISOString(),
-            }),
-          );
+          if (requiredReviews.includes(context.payload.sender.login)) {
+            this.app.log.debug(logFields, `Creating successfull check (PR ${context.payload.pull_request.number})`);
 
-          checkResponseStatus(
-            response,
-            201,
-            `Failed to create green check_run after approval of PR#${
-              context.payload.pull_request.number
-            }. A normal check_run will be queued.`,
-            logFields,
-          );
-          return;
+            const response = await context.github.checks.create(
+              context.repo({
+                name: PrChecker.CHECK_NAME,
+                head_sha: context.payload.pull_request.head.sha,
+                status: 'completed' as 'completed',
+                conclusion: 'success' as 'success',
+                completed_at: moment().toISOString(),
+              }),
+            );
+
+            checkResponseStatus(
+              response,
+              201,
+              `Failed to create green check_run after approval of PR#${
+                context.payload.pull_request.number
+              }. A normal check_run will be queued.`,
+              logFields,
+            );
+            return;
+          }
         }
-      } finally {
-        // Nothing to do.
+      } catch {
+        // In case of an exception, enqueue a normal check.
       }
     }
 
@@ -106,7 +130,7 @@ export default class PrChecker extends Behavior {
         head_sha: commit.head_sha,
         ...PrChecker.LOG_FIELDS,
       });
-    } finally {
+    } catch {
       // Well... this could be "critical". No checks will happen if this fails.
     }
   };
@@ -134,6 +158,7 @@ export default class PrChecker extends Behavior {
       );
 
       // PRs opened by bot should always pass
+      //   This is to avoid blocking VersionBumpMerger behavior (and generating a loop)
       for (const pr of pull_requests) {
         const fullPr = await context.github.pulls.get(
           context.repo({
@@ -142,7 +167,7 @@ export default class PrChecker extends Behavior {
         );
         checkResponseWith(fullPr, { logFields: { phase: 'check bot', ...logFields } });
         if (fullPr.data.user.login === process.env.KIALI_BOT_USER) {
-          this.app.log.info(PrChecker.LOG_FIELDS, `Not doing checks on PR because it is owned by the bot user.`);
+          this.app.log.info(PrChecker.LOG_FIELDS, 'Not doing checks on PR because it is owned by the bot user.');
           return this.markBotPrAsOk(context);
         }
       }
@@ -158,29 +183,37 @@ export default class PrChecker extends Behavior {
       });
 
       // Resolve reviews status
-      const qeUsers = await this.findQeUsers();
+      const requiredApprovals = await this.findRequiredApprovals(context);
 
-      const prReviews: ReviewStatuses = {};
-      for await (const pr of pull_requests) {
-        const listReviewsParams = context.repo({
-          pull_number: pr.number,
-        });
-        const getReviewsParams = context.github.pulls.listReviews.endpoint.merge(listReviewsParams);
-        for await (const reviews of context.github.paginate.iterator(getReviewsParams)) {
-          checkResponseWith(reviews, { logFields: { phase: 'resolve reviews', ...logFields } });
-          reviews.data.forEach((val: PullsListReviewsResponseItem) => {
-            prReviews[val.user.login] = val.state;
-          });
-        }
-      }
-
-      // Check if PR is approved by QE
+      // If approvals list is empty, just mark as success
       let conclusion = 'failure' as 'failure' | 'success';
-      if (qeUsers.some(user => prReviews[user] && prReviews[user] === 'APPROVED')) {
+      if (requiredApprovals.length > 0) {
+        const prReviews: ReviewStatuses = {};
+        for await (const pr of pull_requests) {
+          const listReviewsParams = context.repo({
+            pull_number: pr.number,
+          });
+          const getReviewsParams = context.github.pulls.listReviews.endpoint.merge(listReviewsParams);
+          for await (const reviews of context.github.paginate.iterator(getReviewsParams)) {
+            checkResponseWith(reviews, { logFields: { phase: 'resolve reviews', ...logFields } });
+            reviews.data.forEach((val: PullsListReviewsResponseItem) => {
+              prReviews[val.user.login] = val.state;
+            });
+          }
+        }
+
+        // Check if all required approvals are done
+        const anyApprovedTest = (approvals: string[]): boolean =>
+          approvals.some(user => prReviews[user] && prReviews[user] === 'APPROVED');
+
+        if (requiredApprovals.every(anyApprovedTest)) {
+          conclusion = 'success';
+        }
+      } else {
+        this.app.log.trace(PrChecker.LOG_FIELDS, 'Marking as success because reviewers list is empty');
         conclusion = 'success';
       }
 
-      // At least one member from QE has approved. Mark check as OK.
       const inProgressFinish = context.repo({
         check_run_id: context.payload.check_run.id,
         status: 'completed' as 'completed',
@@ -207,8 +240,22 @@ export default class PrChecker extends Behavior {
     });
   };
 
-  private findQeUsers = async () => {
-    return ['edgarHzg', 'israel-hdez'];
+  private findRequiredApprovals = async (context: Context): Promise<string[][]> => {
+    const configs = await getConfigManager().getConfigs(context);
+
+    if (configs.checks && configs.checks.pull_requests && configs.checks.pull_requests.required_approvals) {
+      // Normalize to 2-D array
+      if (typeof configs.checks.pull_requests.required_approvals === 'string') {
+        return [[configs.checks.pull_requests.required_approvals]];
+      }
+
+      const approvals: UserOrUserList[] = configs.checks.pull_requests.required_approvals;
+      const retVal = approvals.map(value => (typeof value === 'string' ? [value] : value));
+
+      return retVal;
+    }
+
+    return [];
   };
 
   private isOwnedCheckRun = (checkRun: WebhookPayloadCheckRunCheckRun): boolean => {
@@ -218,5 +265,18 @@ export default class PrChecker extends Behavior {
     }
 
     return true;
+  };
+
+  private areChecksEnabled = async (context: Context): Promise<boolean> => {
+    const configs = await getConfigManager().getConfigs(context);
+
+    let isEnabled =
+      configs.checks !== undefined &&
+      (configs.checks.enabled === undefined || configs.checks.enabled === true) &&
+      configs.checks.pull_requests !== undefined &&
+      (configs.checks.pull_requests.enabled === undefined || configs.checks.pull_requests.enabled === true) &&
+      configs.checks.pull_requests.required_approvals !== undefined;
+
+    return isEnabled;
   };
 }

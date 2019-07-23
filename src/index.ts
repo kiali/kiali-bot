@@ -4,11 +4,14 @@ import MilestoneSetter from './behaviors/MilestoneSetter';
 import ReleaseNotifier from './behaviors/ReleaseNotifier';
 import VersionBumpMerger from './behaviors/VersionBumpMerger';
 // import JiraIssueExporter from './behaviors/JiraIssueExporter'
-import { setProbotApp } from './globals';
+import {ConfigManager} from "./ConfigManager";
+import {setConfigManager, setProbotApp} from './globals';
 
 export = (app: Application): void => {
   setProbotApp(app);
+  setConfigManager(new ConfigManager(app));
 
+  // TODO: Restore
   const behaviors = [
     // JiraIssueExporter,
     PrChecker,
