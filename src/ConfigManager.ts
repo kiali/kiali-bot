@@ -66,7 +66,6 @@ export class ConfigManager {
       .then(
         (configs: Configs): Configs => {
           this.configs[repoStr] = { yaml: configs, request: null };
-          getProbotApp().log.trace(`Fetched configs for repository ${repoStr}: ${JSON.stringify(configs, null, 2)}`);
           return configs;
         },
       )

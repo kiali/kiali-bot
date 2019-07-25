@@ -87,7 +87,7 @@ export default class PrChecker extends Behavior {
           const requiredReviews = requiredApprovals[0];
 
           if (requiredReviews.includes(context.payload.sender.login)) {
-            this.app.log.debug(logFields, `Creating successfull check (PR ${context.payload.pull_request.number})`);
+            this.app.log.debug(logFields, `Creating successful check (PR ${context.payload.pull_request.number})`);
 
             const response = await context.github.checks.create(
               context.repo({
@@ -108,11 +108,11 @@ export default class PrChecker extends Behavior {
               logFields,
             );
           }
-        }
 
-        // If review is approved, it is safe if further checks don't run.
-        // It won't change the result of the check.
-        return;
+          // Since we know there is only one mandatory review, it is safe if further checks don't run.
+          // It won't change the result of the check.
+          return;
+        }
       } catch {
         // In case of an exception, enqueue a normal check.
       }
