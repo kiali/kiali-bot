@@ -21,6 +21,7 @@ interface ReviewStatuses {
 export default class PrChecker extends Behavior {
   private static LOG_FIELDS = { behavior: 'PrChecker' };
   public static CHECK_NAME = 'Kiali - PR';
+  public static OUTPUT_TITLE = 'Workflow checks';
 
   public constructor(app: Application) {
     super(app);
@@ -226,6 +227,10 @@ export default class PrChecker extends Behavior {
         status: 'completed' as 'completed',
         conclusion: conclusion,
         completed_at: moment().toISOString(),
+        output: {
+          title: PrChecker.OUTPUT_TITLE,
+          summary: PrChecker.getSummaryMsg(conclusion, pull_requests[0].number, requiredApprovals),
+        },
       });
       checkResponseWith(await context.github.checks.update(inProgressFinish), {
         logFields: { phase: 'mark complete', ...logFields },
@@ -284,4 +289,21 @@ export default class PrChecker extends Behavior {
 
     return isEnabled;
   };
+
+  private static getSummaryMsg(conclusion: string, prNumber: number, mandatoryReviewers: string[][]): string {
+    if (conclusion === 'success') {
+      return `The pull request #${prNumber} has passed the workflow checks.`;
+    } else {
+      const mandatoryReviewersText = mandatoryReviewers.map(users =>
+        users.length === 1 ? `user _${users[0]}_` : `one of these users: _${users.join(', ')}_`,
+      );
+
+      return (
+        `The pull request #${prNumber} hasn't been approved by the ` +
+        'mandatory reviewers. At the moment of the validation, ' +
+        'the mandatory reviewers were:\n\n' +
+        `* ${mandatoryReviewersText.join('\n* and ')}`
+      );
+    }
+  }
 }
