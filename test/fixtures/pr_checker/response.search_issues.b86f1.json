@@ -1,0 +1,19 @@
+{
+  "total_count": 1,
+  "incomplete_results": false,
+  "items": [
+    {
+      "repository_url": "https://api.github.com/repos/dummyOwner/useless",
+      "number": 38,
+      "title": "Testing check from fork",
+      "user": {
+        "login": "dummyOwner",
+        "type": "User"
+      },
+      "labels": [
+
+      ],
+      "state": "open"
+    }
+  ]
+}

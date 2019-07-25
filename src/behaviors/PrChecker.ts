@@ -20,7 +20,7 @@ interface ReviewStatuses {
 
 export default class PrChecker extends Behavior {
   private static LOG_FIELDS = { behavior: 'PrChecker' };
-  private static CHECK_NAME = 'Kiali - PR';
+  public static CHECK_NAME = 'Kiali - PR';
 
   public constructor(app: Application) {
     super(app);
@@ -49,25 +49,25 @@ export default class PrChecker extends Behavior {
   };
 
   private pullRequestEventHandler = async (context: Context<WebhookPayloadPullRequest>): Promise<void> => {
-    if (!this.areChecksEnabled(context)) {
+    if (!(await this.areChecksEnabled(context))) {
       context.log.trace('Not running checks, because checker is disabled');
       return;
     }
 
     this.app.log.debug(PrChecker.LOG_FIELDS, `Queuing new PR checks (PR ${context.payload.pull_request.number})`);
-    this.createCheckRun(context.github, context.repo({ head_sha: context.payload.pull_request.head.sha }));
+    return this.createCheckRun(context.github, context.repo({ head_sha: context.payload.pull_request.head.sha }));
   };
 
   private pullRequestReviewEventHandler = async (context: Context<WebhookPayloadPullRequestReview>): Promise<void> => {
-    if (!this.areChecksEnabled(context)) {
-      context.log.trace('Not running checks, because checker is disabled');
-      return;
-    }
-
     // Bot actions are ignored
     //   This is to avoid blocking VersionBumpMerger behavior (and generating a loop)
     if (context.isBot) {
       context.log.debug(`Ignoring review action in PR ${context.payload.pull_request.number} (ignoring bots)`);
+      return;
+    }
+
+    if (!(await this.areChecksEnabled(context))) {
+      context.log.trace('Not running checks, because checker is disabled');
       return;
     }
 
@@ -106,9 +106,12 @@ export default class PrChecker extends Behavior {
               }. A normal check_run will be queued.`,
               logFields,
             );
-            return;
           }
         }
+
+        // If review is approved, it is safe if further checks don't run.
+        // It won't change the result of the check.
+        return;
       } catch {
         // In case of an exception, enqueue a normal check.
       }
@@ -116,7 +119,7 @@ export default class PrChecker extends Behavior {
 
     // ...else, enqueue a check run.
     this.app.log.debug(logFields, `Queuing new PR checks (PR ${context.payload.pull_request.number})`);
-    this.createCheckRun(context.github, context.repo({ head_sha: context.payload.pull_request.head.sha }));
+    return this.createCheckRun(context.github, context.repo({ head_sha: context.payload.pull_request.head.sha }));
   };
 
   private createCheckRun = async (
@@ -133,8 +136,9 @@ export default class PrChecker extends Behavior {
         head_sha: commit.head_sha,
         ...PrChecker.LOG_FIELDS,
       });
-    } catch {
+    } catch (e) {
       // Well... this could be "critical". No checks will happen if this fails.
+      throw e;
     }
   };
 
@@ -260,7 +264,7 @@ export default class PrChecker extends Behavior {
   };
 
   private isOwnedCheckRun = (checkRun: WebhookPayloadCheckRunCheckRun): boolean => {
-    if (checkRun.app.id !== Number(process.env.APP_ID) && checkRun.name !== PrChecker.CHECK_NAME) {
+    if (checkRun.app.id !== Number(process.env.APP_ID) || checkRun.name !== PrChecker.CHECK_NAME) {
       this.app.log.trace(PrChecker.LOG_FIELDS, `Check run ${checkRun.id} not owned by this behavior`);
       return false;
     }
