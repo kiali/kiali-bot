@@ -10,8 +10,8 @@ deploy:
   script: bash deploy.sh
   skip_cleanup: true
 before_install:
-- openssl aes-256-cbc -K $encrypted_a9e5b11a096a_key -iv $encrypted_a9e5b11a096a_iv
-  -in ./.travis/deploy-key.enc -out ./.travis/deploy-key -d
+- if [ ! "$encrypted_a9e5b11a096a_key" = "" ]; then openssl aes-256-cbc -K $encrypted_a9e5b11a096a_key -iv $encrypted_a9e5b11a096a_iv
+  -in ./.travis/deploy-key.enc -out ./.travis/deploy-key -d; fi
 env:
   global:
   - secure: X+rmIMn//EFzKRf2Ua98lydvvNiVQVX9dr1nFNy1wFcq0pO16y0UoDoTvQU1sUfuf22CVj1pERSo+4idiy1Iz1xuApIkVfAnBaEOuL2QrgVf8FF3lS+k8zQ3AuZS3Iwy60RnIf8YcyfF1n7QhuH1yKuv5dgLyuV4tT1D8Xghb1AoJkFzDXSjXM/yhua2NaUmSM1YC/0myp9iwXnFpE6TBX/n/zCtHQM0g1D9QRYUpXk8Xf0RB6/z0QlKLN2v8ZDAA3ML9yV9Uhg/Wt9nFDMUklHaU7Zh4qNKnyxyI93PkWgHXtpuH4Pp8KjhCFSXvKFiakuLKu1C307PV8bOsIbCP0rfjAOpvrghILrjEoTl3qB8QBbjNwSXPzNeoRWeeqBrf79YABoO10tcU5VBLYKg8j4vllUY5kGK2rySYyPXnM45Q8vjoe8UbWFiCy3hZxDpaqERlYq872j079mHNyloCPFXlxR1YPPvUyzpM6ICm2MdUYDCwNBN9dj4X4+SKcX/yI6zH2UsgkOi2Os55/Yys96CMcE7u9zFqJvEAcZNE1ETeqDYeRyOsniKoDlTNANDFT2yBXmrtn+/2V4zTVGlgA8LyD2NoXlDdxBRKDqcPRgt6cr9jC8E147zQzI+ocatqnldLATegaNQcK+PdZp1JXWU4Pu/cDDCIdtL8P7pOZE=

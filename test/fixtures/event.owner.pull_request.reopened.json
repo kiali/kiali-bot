@@ -1,0 +1,49 @@
+{
+  "action": "reopened",
+  "number": 37,
+  "pull_request": {
+    "number": 37,
+    "state": "open",
+    "title": "Testing checks",
+    "user": {
+      "login": "dummyOwner"
+    },
+    "head": {
+      "label": "dummyOwner:checks",
+      "ref": "checks",
+      "sha": "b1ff1710334d4332b4e68bd4165217c181cfa612",
+      "user": {
+        "login": "dummyOwner"
+      },
+      "repo": {
+        "name": "useless",
+        "full_name": "dummyOwner/useless",
+        "owner": {
+          "login": "dummyOwner"
+        }
+      }
+    },
+    "base": {
+      "label": "dummyOwner:master",
+      "ref": "master",
+      "sha": "d850608d083d13ed4e8101f30338f37e003bdc02",
+      "user": {
+        "login": "dummyOwner"
+      },
+      "repo": {
+        "name": "useless",
+        "full_name": "dummyOwner/useless",
+        "owner": {
+          "login": "dummyOwner"
+        }
+      }
+    }
+  },
+  "repository": {
+    "name": "useless",
+    "full_name": "dummyOwner/useless",
+    "owner": {
+      "login": "dummyOwner"
+    }
+  }
+}

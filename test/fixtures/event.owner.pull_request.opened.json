@@ -1,0 +1,61 @@
+{
+  "action": "opened",
+  "number": 10,
+  "pull_request": {
+    "number": 10,
+    "state": "open",
+    "title": "Second commit",
+    "user": {
+      "login": "dummyOwner"
+    },
+    "labels": [
+
+    ],
+    "milestone": null,
+    "head": {
+      "label": "dummyOwner:b1",
+      "ref": "b1",
+      "sha": "3dfbb5b9f0fa5f32c3d9bd8255d78cbf2dab7a01",
+      "repo": {
+        "name": "useless",
+        "full_name": "dummyOwner/useless",
+        "owner": {
+          "login": "dummyOwner"
+        }
+      }
+    },
+    "base": {
+      "label": "dummyOwner:master",
+      "ref": "master",
+      "sha": "72e74541df47661d1b19cec441b05834501a6a5c",
+      "user": {
+        "login": "dummyOwner"
+      },
+      "repo": {
+        "name": "useless",
+        "full_name": "dummyOwner/useless",
+        "owner": {
+          "login": "dummyOwner"
+        }
+      }
+    },
+    "author_association": "OWNER",
+    "draft": false,
+    "merged": false,
+    "mergeable": null,
+    "rebaseable": null,
+    "mergeable_state": "unknown",
+    "merged_by": null
+  },
+  "repository": {
+    "name": "useless",
+    "full_name": "dummyOwner/useless",
+    "private": false,
+    "owner": {
+      "login": "dummyOwner"
+    }
+  },
+  "sender": {
+    "login": "dummyOwner"
+  }
+}
