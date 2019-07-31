@@ -29,6 +29,8 @@ export default class PrChecker extends Behavior {
     // Events that should trigger the checks
     app.on('pull_request.opened', this.pullRequestEventHandler);
     app.on('pull_request.reopened', this.pullRequestEventHandler);
+    app.on('pull_request.synchronize', this.pullRequestEventHandler);
+    // app.on('pull_request.ready_for_review', this.pullRequestEventHandler);
     app.on('check_run.rerequested', this.checkRerequestedHandler);
     app.on('pull_request_review.dismissed', this.pullRequestReviewEventHandler);
     app.on('pull_request_review.submitted', this.pullRequestReviewEventHandler);
@@ -53,6 +55,12 @@ export default class PrChecker extends Behavior {
     if (!(await this.areChecksEnabled(context))) {
       context.log.trace('Not running checks, because checker is disabled');
       return;
+    }
+
+    if (context.payload.pull_request.state === 'closed') {
+      // TODO: Also, don't run checks if PR is a draft.
+      context.log.trace('Not running checks because pull request is closed');
+      return; // Ignore PRs that are drafts or are closed.
     }
 
     this.app.log.debug(PrChecker.LOG_FIELDS, `Queuing new PR checks (PR ${context.payload.pull_request.number})`);
@@ -235,8 +243,9 @@ export default class PrChecker extends Behavior {
       checkResponseWith(await context.github.checks.update(inProgressFinish), {
         logFields: { phase: 'mark complete', ...logFields },
       });
-    } catch {
+    } catch (e) {
       this.app.log.error(logFields, 'Error performing check_run');
+      throw e;
     }
   };
 
