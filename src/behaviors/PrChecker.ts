@@ -237,7 +237,11 @@ export default class PrChecker extends Behavior {
         completed_at: moment().toISOString(),
         output: {
           title: PrChecker.OUTPUT_TITLE,
-          summary: PrChecker.getSummaryMsg(conclusion, pull_requests[0].number, requiredApprovals),
+          summary: PrChecker.getSummaryMsg(
+            conclusion,
+            pull_requests[0] ? pull_requests[0].number : 0,
+            requiredApprovals,
+          ),
         },
       });
       checkResponseWith(await context.github.checks.update(inProgressFinish), {
