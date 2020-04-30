@@ -7,7 +7,6 @@ Find the artifacts for this release:
 
 * The Kiali operator image at Quay.io - https://quay.io/repository/kiali/kiali-operator?tab=tags
 * The Kiali image at Quay.io - https://quay.io/repository/kiali/kiali?tab=tags
-* The Kiali image mirrored at DockerHub - https://hub.docker.com/r/kiali/kiali/
 * The Kiali UI at NPM registry - https://www.npmjs.com/package/@kiali/kiali-ui
 
 Check our YouTube channel (https://www.youtube.com/channel/UCcm2NzDN_UCZKk2yYmOpc5w) to find a video demoing the new features for this release. If you prefer to read, check our Medium feed (https://medium.com/kialiproject) where we write about the updates (although with a little delay).
@@ -48,8 +47,6 @@ export const htmlNotification = `
           The Kiali operator image at Quay.io</a>.</li>
         <li><a href="https://quay.io/repository/kiali/kiali?tab=tags">
           The Kiali image at Quay.io</a>.</li>
-        <li><a href="https://hub.docker.com/r/kiali/kiali">
-          The Kiali image mirrored at DockerHub</a>.</li>
         <li><a href="https://www.npmjs.com/package/@kiali/kiali-ui">
           The Kiali UI at NPM registry</a>.</li>
       </ul>
