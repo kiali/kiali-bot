@@ -70,7 +70,7 @@ export class ConfigManager {
         },
       )
       .catch(
-        (e): Promise<{}> => {
+        (e): Promise<Configs> => {
           getProbotApp().log.error(`Failed to get config for repository ${repoStr}`);
           return Promise.reject(e);
         },

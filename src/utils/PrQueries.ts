@@ -21,7 +21,7 @@ export async function getOrQueryPrsForCommit(
     q: `sha:${sha}+is:pr`,
   });
 
-  let retVal: PullsGetParams[] = [];
+  const retVal: PullsGetParams[] = [];
   getProbotApp().log.debug(`Searching PRs for commit ${sha}.`);
   for await (const page of api.paginate.iterator(query)) {
     checkResponseStatus(page);

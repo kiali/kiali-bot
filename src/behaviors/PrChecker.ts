@@ -101,8 +101,8 @@ export default class PrChecker extends Behavior {
               context.repo({
                 name: PrChecker.CHECK_NAME,
                 head_sha: context.payload.pull_request.head.sha,
-                status: 'completed' as 'completed',
-                conclusion: 'success' as 'success',
+                status: 'completed' as const,
+                conclusion: 'success' as const,
                 completed_at: moment().toISOString(),
               }),
             );
@@ -135,7 +135,7 @@ export default class PrChecker extends Behavior {
   ): Promise<void> => {
     try {
       const response = await api.checks.create({
-        status: 'queued' as 'queued',
+        status: 'queued' as const,
         name: PrChecker.CHECK_NAME,
         ...commit,
       });
@@ -189,7 +189,7 @@ export default class PrChecker extends Behavior {
       // Mark check as in-progress
       const inProgressUpdate = context.repo({
         check_run_id: context.payload.check_run.id,
-        status: 'in_progress' as 'in_progress',
+        status: 'in_progress' as const,
         started_at: moment().toISOString(),
       });
       checkResponseWith(await context.github.checks.update(inProgressUpdate), {
@@ -230,7 +230,7 @@ export default class PrChecker extends Behavior {
 
       const inProgressFinish = context.repo({
         check_run_id: context.payload.check_run.id,
-        status: 'completed' as 'completed',
+        status: 'completed' as const,
         conclusion: conclusion,
         completed_at: moment().toISOString(),
         output: {
@@ -254,8 +254,8 @@ export default class PrChecker extends Behavior {
   private markBotPrAsOk = async (context: Context<WebhookPayloadCheckRun>): Promise<void> => {
     const inProgressFinish = context.repo({
       check_run_id: context.payload.check_run.id,
-      status: 'completed' as 'completed',
-      conclusion: 'success' as 'success',
+      status: 'completed' as const,
+      conclusion: 'success' as const,
       completed_at: moment().toISOString(),
     });
     checkResponseWith(await context.github.checks.update(inProgressFinish), {
@@ -291,7 +291,7 @@ export default class PrChecker extends Behavior {
   private areChecksEnabled = async (context: Context): Promise<boolean> => {
     const configs = await getConfigManager().getConfigs(context);
 
-    let isEnabled =
+    const isEnabled =
       configs.checks !== undefined &&
       (configs.checks.enabled === undefined || configs.checks.enabled === true) &&
       configs.checks.pull_requests !== undefined &&
@@ -305,7 +305,7 @@ export default class PrChecker extends Behavior {
     if (conclusion === 'success') {
       return `The pull request #${prNumber} has passed the workflow checks.`;
     } else {
-      const mandatoryReviewersText = mandatoryReviewers.map(users =>
+      const mandatoryReviewersText = mandatoryReviewers.map((users) =>
         users.length === 1 ? `user _${users[0]}_` : `one of these users: _${users.join(', ')}_`,
       );
 

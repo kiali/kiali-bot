@@ -152,8 +152,8 @@ export default class VersionBumpMerger extends Behavior {
       return false;
     }
 
-    let badChecks: string[] = [];
-    checksResponse.data.check_runs.forEach(check => {
+    const badChecks: string[] = [];
+    checksResponse.data.check_runs.forEach((check) => {
       if (check.status !== 'completed' || check.conclusion !== 'success') {
         badChecks.push(check.name);
       }

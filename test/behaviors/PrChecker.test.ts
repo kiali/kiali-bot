@@ -253,7 +253,7 @@ describe('Pull request checker', () => {
     scope.get('/repos/dummyOwner/useless/pulls/38').reply(200, getPr38Result);
     scope.get('/repos/dummyOwner/useless/pulls/38/reviews').reply(200, getPr38ReviewsApprovedResult);
 
-    let checkRunUpdate: any[] = [];
+    const checkRunUpdate: any[] = [];
     scope
       .patch(`/repos/dummyOwner/useless/check-runs/${checkRunCreatedPayload.check_run.id}`, (body: any) => {
         checkRunUpdate.push(body);
@@ -294,7 +294,7 @@ describe('Pull request checker', () => {
     scope.get('/repos/dummyOwner/useless/pulls/38').reply(200, getPr38Result);
     scope.get('/repos/dummyOwner/useless/pulls/38/reviews').reply(200, getPr38ReviewsNotApprovedResult);
 
-    let checkRunUpdate: any[] = [];
+    const checkRunUpdate: any[] = [];
     scope
       .patch(`/repos/dummyOwner/useless/check-runs/${checkRunCreatedPayload.check_run.id}`, (body: any) => {
         checkRunUpdate.push(body);
@@ -335,7 +335,7 @@ describe('Pull request checker', () => {
     scope.get('/repos/dummyOwner/useless/pulls/38').reply(200, getPr38Result);
     scope.get('/repos/dummyOwner/useless/pulls/38/reviews').reply(200, getPr38ReviewsApprovedResult);
 
-    let checkRunUpdate: any[] = [];
+    const checkRunUpdate: any[] = [];
     scope
       .patch(`/repos/dummyOwner/useless/check-runs/${checkRunCreatedPayload.check_run.id}`, (body: any) => {
         checkRunUpdate.push(body);
