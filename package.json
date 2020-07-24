@@ -18,8 +18,9 @@
   ],
   "main": "lib/index.js",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "dev": "nodemon --exec \"(npm run build || exit 1) && (npm start || exit 1)\"",
+    "build": "tsc",
+    "build:watch": "tsc && (tsc -w --preserveWatchOutput & nodemon)",
+    "dev": "npm run build:watch",
     "start": "probot run ./lib/index.js",
     "lint": "eslint --fix '{src,test}/**/*.ts'",
     "test": "env $(cat .env.tests) jest && eslint '{src,test}/**/*.ts'",
