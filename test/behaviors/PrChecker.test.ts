@@ -364,7 +364,7 @@ describe('Pull request checker', () => {
   });
 
   test('checks succeed if pull request is opened by the bot user', async () => {
-    const scope = nock('https://api.github.com').log(console.log);
+    const scope = nock('https://api.github.com');
 
     scope
       .get('/search/issues')
