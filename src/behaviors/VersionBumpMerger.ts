@@ -61,7 +61,7 @@ export default class VersionBumpMerger extends Behavior {
       // There is an array of PRs, but we expect only one matching PR. So, just
       // grab the first one in the array.
       context.log.debug(VersionBumpMerger.LOG_FIELDS, `Using attached PR for check run #${check.id}`);
-      prParams = context.repo({ number: check.pull_requests[0].number });
+      prParams = context.repo({ pull_number: check.pull_requests[0].number });
     }
 
     if (prParams) {
@@ -109,7 +109,7 @@ export default class VersionBumpMerger extends Behavior {
       // We return the PR that is placed in "our" repo.
       // Using the pull request repo URL to identify it.
       if (item.repository_url === `https://api.github.com/repos/${repo.owner}/${repo.repo}`) {
-        retVal = { number: item.number, ...repo };
+        retVal = { pull_number: item.number, ...repo };
       }
     });
 
@@ -235,13 +235,13 @@ export default class VersionBumpMerger extends Behavior {
   };
 
   private tryMergePr = async (api: GitHubAPI, pullParams: PullsGetParams) => {
-    const logFields = { pr_number: pullParams.number, ...VersionBumpMerger.LOG_FIELDS };
+    const logFields = { pr_number: pullParams.pull_number, ...VersionBumpMerger.LOG_FIELDS };
 
-    this.app.log.debug(logFields, `Trying to merge PR#${pullParams.number} automatically`);
+    this.app.log.debug(logFields, `Trying to merge PR#${pullParams.pull_number} automatically`);
     const prResponse = await api.pulls.get(pullParams);
 
     if (prResponse.status !== 200) {
-      this.app.log.warn(logFields, `Cannot fetch PR#${pullParams.number}: HTTP ${prResponse.status}`);
+      this.app.log.warn(logFields, `Cannot fetch PR#${pullParams.pull_number}: HTTP ${prResponse.status}`);
       return;
     }
 

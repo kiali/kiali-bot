@@ -31,7 +31,7 @@ export async function getOrQueryPrsForCommit(
       // Using the pull request repo URL to identify it.
       if (item.repository_url === `https://api.github.com/repos/${repo.owner}/${repo.repo}`) {
         getProbotApp().log.debug(`Commit ${sha} has PR ${item.url} which is returned by getOrQueryPrsForCommit.`);
-        retVal.push({ number: Number(item.number), ...repo });
+        retVal.push({ pull_number: Number(item.number), ...repo });
       }
     }
   }

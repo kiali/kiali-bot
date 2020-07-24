@@ -178,7 +178,7 @@ export default class PrChecker extends Behavior {
       for (const pr of pull_requests) {
         const fullPr = await context.github.pulls.get(
           context.repo({
-            number: pr.number,
+            number: pr.pull_number,
           }),
         );
         checkResponseWith(fullPr, { logFields: { phase: 'check bot', ...logFields } });
@@ -207,7 +207,7 @@ export default class PrChecker extends Behavior {
         const prReviews: ReviewStatuses = {};
         for await (const pr of pull_requests) {
           const listReviewsParams = context.repo({
-            pull_number: pr.number,
+            pull_number: pr.pull_number,
           });
           const getReviewsParams = context.github.pulls.listReviews.endpoint.merge(listReviewsParams);
           for await (const reviews of context.github.paginate.iterator(getReviewsParams)) {
@@ -239,7 +239,7 @@ export default class PrChecker extends Behavior {
           title: PrChecker.OUTPUT_TITLE,
           summary: PrChecker.getSummaryMsg(
             conclusion,
-            pull_requests[0] ? pull_requests[0].number : 0,
+            pull_requests[0] ? pull_requests[0].pull_number : 0,
             requiredApprovals,
           ),
         },

@@ -16,12 +16,12 @@ export default class MilestoneSetter extends Behavior {
   }
 
   private assignMilestone = async (api: GitHubAPI, prParams: PullsGetParams): Promise<void> => {
-    const logFields = { pr_number: prParams.number, ...MilestoneSetter.LOG_FIELDS };
-    this.app.log.debug(logFields, `Setting milestone to PR#${prParams.number}...`);
+    const logFields = { pr_number: prParams.pull_number, ...MilestoneSetter.LOG_FIELDS };
+    this.app.log.debug(logFields, `Setting milestone to PR#${prParams.pull_number}...`);
 
     const prResponse = await api.pulls.get(prParams);
     if (prResponse.data.milestone !== null) {
-      this.app.log.info(logFields, `Not setting milestone to PR#${prParams.number}, because it already has one`);
+      this.app.log.info(logFields, `Not setting milestone to PR#${prParams.pull_number}, because it already has one`);
       return;
     }
 
@@ -31,14 +31,16 @@ export default class MilestoneSetter extends Behavior {
     }
 
     const response = await api.issues.update({
+      owner: prParams.owner,
+      repo: prParams.repo,
       milestone: milestone.number,
-      ...prParams,
+      issue_number: prParams.pull_number,
     });
 
     if (response.status !== 200) {
-      this.app.log.error(logFields, `Cannot set milestone to PR#${prParams.number}: HTTP ${prResponse.status}`);
+      this.app.log.error(logFields, `Cannot set milestone to PR#${prParams.pull_number}: HTTP ${prResponse.status}`);
     } else {
-      this.app.log(logFields, `PR#${prParams.number} milestoned to ${milestone.number} = ${milestone.title}`);
+      this.app.log(logFields, `PR#${prParams.pull_number} milestoned to ${milestone.number} = ${milestone.title}`);
     }
   };
 
@@ -47,7 +49,7 @@ export default class MilestoneSetter extends Behavior {
     prParams: PullsGetParams,
     version: string,
   ): Promise<IssuesGetMilestoneResponse | null> => {
-    const logFields = { pr_number: prParams.number, repo: prParams.repo, ...MilestoneSetter.LOG_FIELDS };
+    const logFields = { pr_number: prParams.pull_number, repo: prParams.repo, ...MilestoneSetter.LOG_FIELDS };
 
     // Check if milestone already exists
     const milestonesResponse = await api.issues.listMilestonesForRepo({
@@ -95,7 +97,7 @@ export default class MilestoneSetter extends Behavior {
     context.log.debug(MilestoneSetter.LOG_FIELDS, `Pull #${pr.number} was just closed`);
 
     if (MilestoneSetter.shouldAssignMilestone(context.log, pr)) {
-      const prParams = context.repo({ number: pr.number });
+      const prParams = context.repo({ pull_number: pr.number });
       this.assignMilestone(context.github, prParams);
     }
   };
@@ -104,7 +106,7 @@ export default class MilestoneSetter extends Behavior {
     api: GitHubAPI,
     prParams: PullsGetParams,
   ): Promise<IssuesGetMilestoneResponse | null> => {
-    const logFields = { pr_number: prParams.number, repo: prParams.repo, ...MilestoneSetter.LOG_FIELDS };
+    const logFields = { pr_number: prParams.pull_number, repo: prParams.repo, ...MilestoneSetter.LOG_FIELDS };
 
     // Get main Makefile to find the current version in it.
     const contentsResponse = await api.repos.getContents({
@@ -116,12 +118,12 @@ export default class MilestoneSetter extends Behavior {
     if (contentsResponse.status !== 200) {
       this.app.log.error(
         logFields,
-        `Cannot determine milestone for PR#${prParams.number}. Unable to get Makefile: HTTP ${contentsResponse.status}`,
+        `Cannot determine milestone for PR#${prParams.pull_number}. Unable to get Makefile: HTTP ${contentsResponse.status}`,
       );
       return null;
     }
 
-    const contents = contentsResponse.data.content as string;
+    const contents = Array.isArray(contentsResponse.data) ? '' : (contentsResponse.data.content as string);
     const buff = Buffer.from(contents, 'base64');
     const file = buff.toString('utf8');
 
@@ -130,7 +132,7 @@ export default class MilestoneSetter extends Behavior {
     if (matches === null || matches.length === 0) {
       this.app.log.error(
         logFields,
-        `Cannot determine milestone for PR#${prParams.number}: Version string not found in Makefile`,
+        `Cannot determine milestone for PR#${prParams.pull_number}: Version string not found in Makefile`,
       );
       return null;
     }
@@ -144,7 +146,7 @@ export default class MilestoneSetter extends Behavior {
     api: GitHubAPI,
     prParams: PullsGetParams,
   ): Promise<IssuesGetMilestoneResponse | null> => {
-    const logFields = { pr_number: prParams.number, repo: prParams.repo, ...MilestoneSetter.LOG_FIELDS };
+    const logFields = { pr_number: prParams.pull_number, repo: prParams.repo, ...MilestoneSetter.LOG_FIELDS };
 
     // Get main Makefile to find the current version in it.
     const contentsResponse = await api.repos.getContents({
@@ -156,14 +158,14 @@ export default class MilestoneSetter extends Behavior {
     if (contentsResponse.status !== 200) {
       this.app.log.error(
         logFields,
-        `Cannot determine milestone for PR#${prParams.number}. Unable to get package.json: HTTP ${
+        `Cannot determine milestone for PR#${prParams.pull_number}. Unable to get package.json: HTTP ${
           contentsResponse.status
         }`,
       );
       return null;
     }
 
-    const contents = contentsResponse.data.content as string;
+    const contents = Array.isArray(contentsResponse.data) ? '' : (contentsResponse.data.content as string);
     const buff = Buffer.from(contents, 'base64');
     const file = buff.toString('utf8');
 
@@ -173,7 +175,7 @@ export default class MilestoneSetter extends Behavior {
     } catch {
       this.app.log.error(
         logFields,
-        `Cannot determine milestone for PR#${prParams.number} because parsing of package.json has failed`,
+        `Cannot determine milestone for PR#${prParams.pull_number} because parsing of package.json has failed`,
       );
     }
 
@@ -190,8 +192,8 @@ export default class MilestoneSetter extends Behavior {
       return this.resolveFrontendMilestone(api, prParams);
     }
 
-    const logFields = { pr_number: prParams.number, repo: prParams.repo, ...MilestoneSetter.LOG_FIELDS };
-    this.app.log.error(logFields, `Unexpected repository name for PR#${prParams.number}`);
+    const logFields = { pr_number: prParams.pull_number, repo: prParams.repo, ...MilestoneSetter.LOG_FIELDS };
+    this.app.log.error(logFields, `Unexpected repository name for PR#${prParams.pull_number}`);
     return null;
   };
 
