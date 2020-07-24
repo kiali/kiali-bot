@@ -19,9 +19,7 @@ export = (app: Application): void => {
     VersionBumpMerger,
   ];
 
-  behaviors.forEach(
-    (Behavior): void => {
-      new Behavior(app);
-    },
-  );
+  behaviors.forEach((Behavior): void => {
+    new Behavior(app);
+  });
 };

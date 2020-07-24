@@ -72,16 +72,12 @@ export default class ReleaseNotifier extends Behavior {
     });
 
     request
-      .then(
-        (): void => {
-          this.app.log.info(logFields, 'New release e-mail notification has been queued.');
-        },
-      )
-      .catch(
-        (err): void => {
-          this.app.log.error(logFields, 'Failed to send e-mail notification for new release.');
-          this.app.log.debug(logFields, err);
-        },
-      );
+      .then((): void => {
+        this.app.log.info(logFields, 'New release e-mail notification has been queued.');
+      })
+      .catch((err): void => {
+        this.app.log.error(logFields, 'Failed to send e-mail notification for new release.');
+        this.app.log.debug(logFields, err);
+      });
   };
 }

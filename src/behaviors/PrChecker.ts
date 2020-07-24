@@ -110,9 +110,7 @@ export default class PrChecker extends Behavior {
             checkResponseStatus(
               response,
               201,
-              `Failed to create green check_run after approval of PR#${
-                context.payload.pull_request.number
-              }. A normal check_run will be queued.`,
+              `Failed to create green check_run after approval of PR#${context.payload.pull_request.number}. A normal check_run will be queued.`,
               logFields,
             );
           }

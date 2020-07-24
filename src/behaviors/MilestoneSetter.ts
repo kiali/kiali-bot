@@ -158,9 +158,7 @@ export default class MilestoneSetter extends Behavior {
     if (contentsResponse.status !== 200) {
       this.app.log.error(
         logFields,
-        `Cannot determine milestone for PR#${prParams.pull_number}. Unable to get package.json: HTTP ${
-          contentsResponse.status
-        }`,
+        `Cannot determine milestone for PR#${prParams.pull_number}. Unable to get package.json: HTTP ${contentsResponse.status}`,
       );
       return null;
     }
