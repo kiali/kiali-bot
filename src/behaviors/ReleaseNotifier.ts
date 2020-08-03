@@ -1,6 +1,6 @@
 import * as Mailjet from 'node-mailjet';
 import { Application, Context } from 'probot';
-import { WebhookPayloadRelease } from '@octokit/webhooks';
+import Webhooks from '@octokit/webhooks';
 import { Behavior } from '../types/generics';
 import { htmlNotification, plainTextNotification } from '../data/ReleaseNotificationMessages';
 
@@ -13,7 +13,7 @@ export default class ReleaseNotifier extends Behavior {
     app.log.info('ReleaseNotifier behavior is initialized');
   }
 
-  private releasePublishedHandler = async (context: Context<WebhookPayloadRelease>): Promise<void> => {
+  private releasePublishedHandler = async (context: Context<Webhooks.WebhookPayloadRelease>): Promise<void> => {
     const logFields = { release_url: context.payload.release.url, ...ReleaseNotifier.LOG_FIELDS };
 
     // Act only for:

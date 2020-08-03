@@ -2,7 +2,7 @@ import { Application, Context } from 'probot';
 import { GitHubAPI } from 'probot/lib/github';
 import { LoggerWithTarget } from 'probot/lib/wrap-logger';
 import { IssuesGetMilestoneResponse, PullsGetParams } from '@octokit/rest';
-import { WebhookPayloadPullRequest, WebhookPayloadPullRequestPullRequest } from '@octokit/webhooks';
+import Webhooks from '@octokit/webhooks';
 import { Behavior } from '../types/generics';
 import { getCurrentSprintEndDate } from '../utils/SprintDates';
 
@@ -92,7 +92,7 @@ export default class MilestoneSetter extends Behavior {
     return createMilestoneResponse.data;
   };
 
-  private prClosedHandler = async (context: Context<WebhookPayloadPullRequest>): Promise<void> => {
+  private prClosedHandler = async (context: Context<Webhooks.WebhookPayloadPullRequest>): Promise<void> => {
     const pr = context.payload.pull_request;
     context.log.debug(MilestoneSetter.LOG_FIELDS, `Pull #${pr.number} was just closed`);
 
@@ -195,7 +195,7 @@ export default class MilestoneSetter extends Behavior {
     return null;
   };
 
-  private static shouldAssignMilestone = (log: LoggerWithTarget, pr: WebhookPayloadPullRequestPullRequest): boolean => {
+  private static shouldAssignMilestone = (log: LoggerWithTarget, pr: Webhooks.WebhookPayloadPullRequestPullRequest): boolean => {
     // Don't assign milestone if PR was not merged.
     if (!pr.merged) {
       log.info(

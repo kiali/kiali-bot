@@ -1,11 +1,6 @@
 import { Application, Context } from 'probot';
 import { Behavior } from '../types/generics';
-import {
-  WebhookPayloadCheckRun,
-  WebhookPayloadPullRequest,
-  WebhookPayloadPullRequestPullRequest,
-  WebhookPayloadStatus,
-} from '@octokit/webhooks';
+import Webhooks from '@octokit/webhooks';
 import { GitHubAPI } from 'probot/lib/github';
 import { PullsGetParams, PullsGetResponse } from '@octokit/rest';
 
@@ -41,7 +36,7 @@ export default class VersionBumpMerger extends Behavior {
     return true;
   };
 
-  private checkRunCompletedHandler = async (context: Context<WebhookPayloadCheckRun>): Promise<void> => {
+  private checkRunCompletedHandler = async (context: Context<Webhooks.WebhookPayloadCheckRun>): Promise<void> => {
     context.log.trace(VersionBumpMerger.LOG_FIELDS, `Check run #${context.payload.check_run.id} has completed`);
 
     const check = context.payload.check_run;
@@ -73,7 +68,7 @@ export default class VersionBumpMerger extends Behavior {
     }
   };
 
-  private commitStatusChangedHandler = async (context: Context<WebhookPayloadStatus>): Promise<void> => {
+  private commitStatusChangedHandler = async (context: Context<Webhooks.WebhookPayloadStatus>): Promise<void> => {
     if (context.payload.state !== 'success') {
       // If status is not 'success', no need to do any further actions
       return;
@@ -116,7 +111,7 @@ export default class VersionBumpMerger extends Behavior {
     return retVal;
   };
 
-  private static isValidPr = (pr: WebhookPayloadPullRequestPullRequest | PullsGetResponse): string | null => {
+  private static isValidPr = (pr: Webhooks.WebhookPayloadPullRequestPullRequest | PullsGetResponse): string | null => {
     // Merge automatically only when pull request is created by the kiali-bot
     if (pr.user.login !== process.env.KIALI_BOT_USER) {
       return `Pull #${pr.number} ignored because opener is not the expected user`;
@@ -213,7 +208,7 @@ export default class VersionBumpMerger extends Behavior {
     return true;
   };
 
-  private prCreatedHandler = async (context: Context<WebhookPayloadPullRequest>) => {
+  private prCreatedHandler = async (context: Context<Webhooks.WebhookPayloadPullRequest>) => {
     const pull = context.payload.pull_request;
     context.log.debug(VersionBumpMerger.LOG_FIELDS, `Pull #${pull.number} was just opened`);
 
