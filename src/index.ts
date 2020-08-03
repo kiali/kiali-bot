@@ -9,11 +9,7 @@ export = (app: Application): void => {
   setProbotApp(app);
   setConfigManager(new ConfigManager(app));
 
-  const behaviors = [
-    MilestoneSetter,
-    ReleaseNotifier,
-    VersionBumpMerger,
-  ];
+  const behaviors = [MilestoneSetter, ReleaseNotifier, VersionBumpMerger];
 
   behaviors.forEach((Behavior): void => {
     new Behavior(app);

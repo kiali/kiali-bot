@@ -195,7 +195,10 @@ export default class MilestoneSetter extends Behavior {
     return null;
   };
 
-  private static shouldAssignMilestone = (log: LoggerWithTarget, pr: Webhooks.WebhookPayloadPullRequestPullRequest): boolean => {
+  private static shouldAssignMilestone = (
+    log: LoggerWithTarget,
+    pr: Webhooks.WebhookPayloadPullRequestPullRequest,
+  ): boolean => {
     // Don't assign milestone if PR was not merged.
     if (!pr.merged) {
       log.info(
