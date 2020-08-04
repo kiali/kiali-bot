@@ -1,11 +1,6 @@
 import { Application, Context } from 'probot';
 import { Behavior } from '../types/generics';
-import {
-  WebhookPayloadCheckRun,
-  WebhookPayloadPullRequest,
-  WebhookPayloadPullRequestPullRequest,
-  WebhookPayloadStatus,
-} from '@octokit/webhooks';
+import Webhooks from '@octokit/webhooks';
 import { GitHubAPI } from 'probot/lib/github';
 import { PullsGetParams, PullsGetResponse } from '@octokit/rest';
 
@@ -41,7 +36,7 @@ export default class VersionBumpMerger extends Behavior {
     return true;
   };
 
-  private checkRunCompletedHandler = async (context: Context<WebhookPayloadCheckRun>): Promise<void> => {
+  private checkRunCompletedHandler = async (context: Context<Webhooks.WebhookPayloadCheckRun>): Promise<void> => {
     context.log.trace(VersionBumpMerger.LOG_FIELDS, `Check run #${context.payload.check_run.id} has completed`);
 
     const check = context.payload.check_run;
@@ -61,7 +56,7 @@ export default class VersionBumpMerger extends Behavior {
       // There is an array of PRs, but we expect only one matching PR. So, just
       // grab the first one in the array.
       context.log.debug(VersionBumpMerger.LOG_FIELDS, `Using attached PR for check run #${check.id}`);
-      prParams = context.repo({ number: check.pull_requests[0].number });
+      prParams = context.repo({ pull_number: check.pull_requests[0].number });
     }
 
     if (prParams) {
@@ -73,7 +68,7 @@ export default class VersionBumpMerger extends Behavior {
     }
   };
 
-  private commitStatusChangedHandler = async (context: Context<WebhookPayloadStatus>): Promise<void> => {
+  private commitStatusChangedHandler = async (context: Context<Webhooks.WebhookPayloadStatus>): Promise<void> => {
     if (context.payload.state !== 'success') {
       // If status is not 'success', no need to do any further actions
       return;
@@ -109,14 +104,14 @@ export default class VersionBumpMerger extends Behavior {
       // We return the PR that is placed in "our" repo.
       // Using the pull request repo URL to identify it.
       if (item.repository_url === `https://api.github.com/repos/${repo.owner}/${repo.repo}`) {
-        retVal = { number: item.number, ...repo };
+        retVal = { pull_number: item.number, ...repo };
       }
     });
 
     return retVal;
   };
 
-  private static isValidPr = (pr: WebhookPayloadPullRequestPullRequest | PullsGetResponse): string | null => {
+  private static isValidPr = (pr: Webhooks.WebhookPayloadPullRequestPullRequest | PullsGetResponse): string | null => {
     // Merge automatically only when pull request is created by the kiali-bot
     if (pr.user.login !== process.env.KIALI_BOT_USER) {
       return `Pull #${pr.number} ignored because opener is not the expected user`;
@@ -152,8 +147,8 @@ export default class VersionBumpMerger extends Behavior {
       return false;
     }
 
-    let badChecks: string[] = [];
-    checksResponse.data.check_runs.forEach(check => {
+    const badChecks: string[] = [];
+    checksResponse.data.check_runs.forEach((check) => {
       if (check.status !== 'completed' || check.conclusion !== 'success') {
         badChecks.push(check.name);
       }
@@ -213,7 +208,7 @@ export default class VersionBumpMerger extends Behavior {
     return true;
   };
 
-  private prCreatedHandler = async (context: Context<WebhookPayloadPullRequest>) => {
+  private prCreatedHandler = async (context: Context<Webhooks.WebhookPayloadPullRequest>) => {
     const pull = context.payload.pull_request;
     context.log.debug(VersionBumpMerger.LOG_FIELDS, `Pull #${pull.number} was just opened`);
 
@@ -235,13 +230,13 @@ export default class VersionBumpMerger extends Behavior {
   };
 
   private tryMergePr = async (api: GitHubAPI, pullParams: PullsGetParams) => {
-    const logFields = { pr_number: pullParams.number, ...VersionBumpMerger.LOG_FIELDS };
+    const logFields = { pr_number: pullParams.pull_number, ...VersionBumpMerger.LOG_FIELDS };
 
-    this.app.log.debug(logFields, `Trying to merge PR#${pullParams.number} automatically`);
+    this.app.log.debug(logFields, `Trying to merge PR#${pullParams.pull_number} automatically`);
     const prResponse = await api.pulls.get(pullParams);
 
     if (prResponse.status !== 200) {
-      this.app.log.warn(logFields, `Cannot fetch PR#${pullParams.number}: HTTP ${prResponse.status}`);
+      this.app.log.warn(logFields, `Cannot fetch PR#${pullParams.pull_number}: HTTP ${prResponse.status}`);
       return;
     }
 

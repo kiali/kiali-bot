@@ -5,16 +5,16 @@ import { getProbotApp } from '../globals';
 interface CheckResponseOptions {
   expectedStatus?: number;
   errorMsg?: string;
-  logFields?: object;
+  logFields?: Record<string, unknown>;
 }
 
 const defaultExpectedResponseCode = 200;
 
 export function checkResponseStatus(
-  response: Octokit.Response<{}>,
+  response: Octokit.Response<unknown>,
   expectedStatus: number = defaultExpectedResponseCode,
   errorMsg?: string,
-  logFields?: object,
+  logFields?: Record<string, unknown>,
 ): void {
   if (response.status !== expectedStatus) {
     const errorMessage = errorMsg
@@ -30,7 +30,7 @@ export function checkResponseStatus(
   }
 }
 
-export function checkResponseWith(response: Octokit.Response<{}>, options: CheckResponseOptions): void {
+export function checkResponseWith(response: Octokit.Response<unknown>, options: CheckResponseOptions): void {
   const copyOptions: CheckResponseOptions = { ...options };
   if (!copyOptions.expectedStatus) {
     copyOptions.expectedStatus = defaultExpectedResponseCode;
