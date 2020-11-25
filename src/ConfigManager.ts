@@ -3,7 +3,9 @@ import getConfig from 'probot-config';
 import Webhooks from '@octokit/webhooks';
 import { getProbotApp } from './globals';
 
-const DEFAULT_CONFIG = {};
+const DEFAULT_CONFIG: Configs = {
+  merge_method: 'merge',
+};
 
 export type UserOrUserList = string | string[];
 
@@ -15,6 +17,10 @@ interface Configs {
       required_approvals?: UserOrUserList | UserOrUserList[];
     };
   };
+
+  // Method for merging pull requests.
+  // Reference: https://docs.github.com/en/free-pro-team@latest/rest/reference/pulls#merge-a-pull-request
+  merge_method: 'merge' | 'squash' | 'rebase';
 }
 
 interface ConfigsPerRepo {
@@ -75,7 +81,7 @@ export class ConfigManager {
           return Promise.reject(e);
         },
       );
-    this.configs[repoStr] = { yaml: {}, request: cfgRequest };
+    this.configs[repoStr] = { yaml: DEFAULT_CONFIG, request: cfgRequest };
 
     return cfgRequest;
   };
