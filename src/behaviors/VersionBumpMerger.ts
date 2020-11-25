@@ -1,8 +1,10 @@
-import { Application, Context } from 'probot';
-import { Behavior } from '../types/generics';
-import Webhooks from '@octokit/webhooks';
-import { GitHubAPI } from 'probot/lib/github';
 import { PullsGetParams, PullsGetResponse } from '@octokit/rest';
+import Webhooks from '@octokit/webhooks';
+import { Application, Context } from 'probot';
+import { GitHubAPI } from 'probot/lib/github';
+
+import { getConfigManager } from '../globals';
+import { Behavior } from '../types/generics';
 
 export default class VersionBumpMerger extends Behavior {
   private static LOG_FIELDS = { behavior: 'VersionBumpMerger' };
@@ -62,7 +64,7 @@ export default class VersionBumpMerger extends Behavior {
     if (prParams) {
       // Merge the PR if possible
       // The merge is "scheduled", to let GitHub checks to settle down
-      setTimeout(this.tryMergePr, VersionBumpMerger.MERGE_INTENTION_DELAY, context.github, prParams);
+      setTimeout(this.tryMergePr, VersionBumpMerger.MERGE_INTENTION_DELAY, context, prParams);
     } else {
       context.log.trace(VersionBumpMerger.LOG_FIELDS, `No PRs found for check run #${check.id}`);
     }
@@ -83,7 +85,7 @@ export default class VersionBumpMerger extends Behavior {
 
     // Status of the commit is "success" and there is a PR associated with it.
     // The PR is potentially mergeable. Schedule the merge intention.
-    setTimeout(this.tryMergePr, VersionBumpMerger.MERGE_INTENTION_DELAY, context.github, prParams);
+    setTimeout(this.tryMergePr, VersionBumpMerger.MERGE_INTENTION_DELAY, context, prParams);
   };
 
   private getPrForCommit = async (
@@ -208,7 +210,7 @@ export default class VersionBumpMerger extends Behavior {
     return true;
   };
 
-  private prCreatedHandler = async (context: Context<Webhooks.WebhookPayloadPullRequest>) => {
+  private prCreatedHandler = async (context: Context<Webhooks.WebhookPayloadPullRequest>): Promise<void> => {
     const pull = context.payload.pull_request;
     context.log.debug(VersionBumpMerger.LOG_FIELDS, `Pull #${pull.number} was just opened`);
 
@@ -229,7 +231,8 @@ export default class VersionBumpMerger extends Behavior {
     );
   };
 
-  private tryMergePr = async (api: GitHubAPI, pullParams: PullsGetParams) => {
+  private tryMergePr = async (context: Context, pullParams: PullsGetParams): Promise<void> => {
+    const api = context.github;
     const logFields = { pr_number: pullParams.pull_number, ...VersionBumpMerger.LOG_FIELDS };
 
     this.app.log.debug(logFields, `Trying to merge PR#${pullParams.pull_number} automatically`);
@@ -245,12 +248,15 @@ export default class VersionBumpMerger extends Behavior {
       this.isPrMergeable(pr) && (await this.isPrChecksOk(api, pr)) && (await this.isPrStatusOk(api, pr));
 
     if (okToMerge) {
-      (await this.approvePr(api, pr)) && (await this.mergePr(api, pr));
+      (await this.approvePr(api, pr)) && (await this.mergePr(context, pr));
     }
   };
 
-  private mergePr = async (api: GitHubAPI, pr: PullsGetResponse): Promise<boolean> => {
+  private mergePr = async (context: Context, pr: PullsGetResponse): Promise<boolean> => {
+    const api = context.github;
     const logFields = { pr_number: pr.number, ...VersionBumpMerger.LOG_FIELDS };
+
+    const configs = await getConfigManager().getConfigs(context);
 
     this.app.log(logFields, `Merging PR#${pr.number}...`);
     const mergeResponse = await api.pulls.merge({
@@ -258,6 +264,7 @@ export default class VersionBumpMerger extends Behavior {
       repo: pr.base.repo.name,
       number: pr.number,
       sha: pr.head.sha,
+      merge_method: configs.merge_method,
     });
 
     this.app.log({ mergeResponse, ...logFields });
