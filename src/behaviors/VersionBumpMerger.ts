@@ -42,7 +42,7 @@ export default class VersionBumpMerger extends Behavior {
     context.log.trace(VersionBumpMerger.LOG_FIELDS, `Check run #${context.payload.check_run.id} has completed`);
 
     const check = context.payload.check_run;
-    if (check.status !== 'completed' || check.conclusion !== 'success') {
+    if (check.status !== 'completed' || (check.conclusion !== 'success' && check.conclusion !== 'skipped')) {
       // If check didn't succeed, no need to merge PR
       context.log.trace(VersionBumpMerger.LOG_FIELDS, `Check run #${check.id} not suceeded yet`);
       return;
@@ -151,7 +151,7 @@ export default class VersionBumpMerger extends Behavior {
 
     const badChecks: string[] = [];
     checksResponse.data.check_runs.forEach((check) => {
-      if (check.status !== 'completed' || check.conclusion !== 'success') {
+      if (check.status !== 'completed' || (check.conclusion !== 'success' && check.conclusion !== 'skipped')) {
         badChecks.push(check.name);
       }
     });
