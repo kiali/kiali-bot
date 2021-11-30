@@ -29,7 +29,7 @@
   "dependencies": {
     "@octokit/types": "^5.0.1",
     "moment": "^2.27.0",
-    "probot": "^10.0.0",
+    "probot": "^10.1.1",
     "probot-config": "^1.1.0"
   },
   "devDependencies": {
