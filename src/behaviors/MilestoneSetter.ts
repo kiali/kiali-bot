@@ -1,10 +1,12 @@
 import { Application, Context } from 'probot';
-import { GitHubAPI } from 'probot/lib/github';
-import { LoggerWithTarget } from 'probot/lib/wrap-logger';
-import { IssuesGetMilestoneResponse, PullsGetParams } from '@octokit/rest';
+import { ProbotOctokit } from 'probot/lib/octokit/probot-octokit';
+import { DeprecatedLogger as LoggerWithTarget } from 'probot/lib/types';
+import { Endpoints, IssuesGetMilestoneResponseData } from '@octokit/types';
 import Webhooks from '@octokit/webhooks';
 import { Behavior } from '../types/generics';
 import { getCurrentSprintEndDate } from '../utils/SprintDates';
+
+type PullsGetParams = Endpoints['GET /repos/:owner/:repo/pulls/:pull_number']['parameters'];
 
 export default class MilestoneSetter extends Behavior {
   private static LOG_FIELDS = { behavior: 'MilestoneSetter' };
@@ -15,7 +17,10 @@ export default class MilestoneSetter extends Behavior {
     app.log.info('MilestoneSetter behavior is initialized');
   }
 
-  private assignMilestone = async (api: GitHubAPI, prParams: PullsGetParams): Promise<void> => {
+  private assignMilestone = async (
+    api: InstanceType<typeof ProbotOctokit>,
+    prParams: PullsGetParams,
+  ): Promise<void> => {
     const logFields = { pr_number: prParams.pull_number, ...MilestoneSetter.LOG_FIELDS };
     this.app.log.debug(logFields, `Setting milestone to PR#${prParams.pull_number}...`);
 
@@ -45,10 +50,10 @@ export default class MilestoneSetter extends Behavior {
   };
 
   private getOrCreateMilestone = async (
-    api: GitHubAPI,
+    api: InstanceType<typeof ProbotOctokit>,
     prParams: PullsGetParams,
     version: string,
-  ): Promise<IssuesGetMilestoneResponse | null> => {
+  ): Promise<IssuesGetMilestoneResponseData | null> => {
     const logFields = { pr_number: prParams.pull_number, repo: prParams.repo, ...MilestoneSetter.LOG_FIELDS };
 
     // Check if milestone already exists
@@ -92,7 +97,9 @@ export default class MilestoneSetter extends Behavior {
     return createMilestoneResponse.data;
   };
 
-  private prClosedHandler = async (context: Context<Webhooks.WebhookPayloadPullRequest>): Promise<void> => {
+  private prClosedHandler = async (
+    context: Context<Webhooks.EventPayloads.WebhookPayloadPullRequest>,
+  ): Promise<void> => {
     const pr = context.payload.pull_request;
     context.log.debug(MilestoneSetter.LOG_FIELDS, `Pull #${pr.number} was just closed`);
 
@@ -103,9 +110,9 @@ export default class MilestoneSetter extends Behavior {
   };
 
   private resolveBackendMilestone = async (
-    api: GitHubAPI,
+    api: InstanceType<typeof ProbotOctokit>,
     prParams: PullsGetParams,
-  ): Promise<IssuesGetMilestoneResponse | null> => {
+  ): Promise<IssuesGetMilestoneResponseData | null> => {
     const logFields = { pr_number: prParams.pull_number, repo: prParams.repo, ...MilestoneSetter.LOG_FIELDS };
 
     // Get main Makefile to find the current version in it.
@@ -143,9 +150,9 @@ export default class MilestoneSetter extends Behavior {
   };
 
   private resolveFrontendMilestone = async (
-    api: GitHubAPI,
+    api: InstanceType<typeof ProbotOctokit>,
     prParams: PullsGetParams,
-  ): Promise<IssuesGetMilestoneResponse | null> => {
+  ): Promise<IssuesGetMilestoneResponseData | null> => {
     const logFields = { pr_number: prParams.pull_number, repo: prParams.repo, ...MilestoneSetter.LOG_FIELDS };
 
     // Get main Makefile to find the current version in it.
@@ -181,9 +188,9 @@ export default class MilestoneSetter extends Behavior {
   };
 
   private resolveMilestoneToSet = async (
-    api: GitHubAPI,
+    api: InstanceType<typeof ProbotOctokit>,
     prParams: PullsGetParams,
-  ): Promise<IssuesGetMilestoneResponse | null> => {
+  ): Promise<IssuesGetMilestoneResponseData | null> => {
     if (prParams.repo === process.env.BACKEND_REPO_NAME) {
       return this.resolveBackendMilestone(api, prParams);
     } else if (prParams.repo === process.env.FRONTEND_REPO_NAME) {
@@ -197,7 +204,7 @@ export default class MilestoneSetter extends Behavior {
 
   private static shouldAssignMilestone = (
     log: LoggerWithTarget,
-    pr: Webhooks.WebhookPayloadPullRequestPullRequest,
+    pr: Webhooks.EventPayloads.WebhookPayloadPullRequestPullRequest,
   ): boolean => {
     // Don't assign milestone if PR was not merged.
     if (!pr.merged) {

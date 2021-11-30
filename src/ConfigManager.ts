@@ -38,7 +38,7 @@ export class ConfigManager {
     this.configs = {};
   }
 
-  private pushHandler = async (context: Context<Webhooks.WebhookPayloadPush>): Promise<void> => {
+  private pushHandler = async (context: Context<Webhooks.EventPayloads.WebhookPayloadPush>): Promise<void> => {
     // Only listen for changes in master branch.
     if (context.payload.ref !== 'refs/heads/master') {
       return;

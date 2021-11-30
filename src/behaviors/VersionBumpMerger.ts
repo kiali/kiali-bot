@@ -1,10 +1,12 @@
-import { PullsGetParams, PullsGetResponse } from '@octokit/rest';
+import { Endpoints, PullsGetResponseData } from '@octokit/types';
 import Webhooks from '@octokit/webhooks';
 import { Application, Context } from 'probot';
-import { GitHubAPI } from 'probot/lib/github';
+import { ProbotOctokit } from 'probot/lib/octokit/probot-octokit';
 
 import { getConfigManager } from '../globals';
 import { Behavior } from '../types/generics';
+
+type PullsGetParams = Endpoints['GET /repos/:owner/:repo/pulls/:pull_number']['parameters'];
 
 export default class VersionBumpMerger extends Behavior {
   private static LOG_FIELDS = { behavior: 'VersionBumpMerger' };
@@ -19,14 +21,14 @@ export default class VersionBumpMerger extends Behavior {
     app.log.info('VersionBumpMerger behavior is initialized');
   }
 
-  private approvePr = async (api: GitHubAPI, pr: PullsGetResponse): Promise<boolean> => {
+  private approvePr = async (api: InstanceType<typeof ProbotOctokit>, pr: PullsGetResponseData): Promise<boolean> => {
     const logFields = { pr_number: pr.number, ...VersionBumpMerger.LOG_FIELDS };
 
     this.app.log(logFields, `Approving PR#${pr.number}...`);
     const reviewResponse = await api.pulls.createReview({
       owner: pr.base.repo.owner.login,
       repo: pr.base.repo.name,
-      number: pr.number,
+      pull_number: pr.number,
       event: 'APPROVE',
     });
 
@@ -38,7 +40,9 @@ export default class VersionBumpMerger extends Behavior {
     return true;
   };
 
-  private checkRunCompletedHandler = async (context: Context<Webhooks.WebhookPayloadCheckRun>): Promise<void> => {
+  private checkRunCompletedHandler = async (
+    context: Context<Webhooks.EventPayloads.WebhookPayloadCheckRun>,
+  ): Promise<void> => {
     context.log.trace(VersionBumpMerger.LOG_FIELDS, `Check run #${context.payload.check_run.id} has completed`);
 
     const check = context.payload.check_run;
@@ -48,7 +52,7 @@ export default class VersionBumpMerger extends Behavior {
       return;
     }
 
-    let prParams: PullsGetParams | null = null;
+    let prParams: PullsGetParams | null;
     if (check.pull_requests.length === 0) {
       // If there are no PRs associated with the check, this does not means
       // that there is no PR. We need to query for it.
@@ -70,7 +74,9 @@ export default class VersionBumpMerger extends Behavior {
     }
   };
 
-  private commitStatusChangedHandler = async (context: Context<Webhooks.WebhookPayloadStatus>): Promise<void> => {
+  private commitStatusChangedHandler = async (
+    context: Context<Webhooks.EventPayloads.WebhookPayloadStatus>,
+  ): Promise<void> => {
     if (context.payload.state !== 'success') {
       // If status is not 'success', no need to do any further actions
       return;
@@ -89,7 +95,7 @@ export default class VersionBumpMerger extends Behavior {
   };
 
   private getPrForCommit = async (
-    api: GitHubAPI,
+    api: InstanceType<typeof ProbotOctokit>,
     repo: { owner: string; repo: string },
     sha: string,
   ): Promise<PullsGetParams | null> => {
@@ -113,7 +119,9 @@ export default class VersionBumpMerger extends Behavior {
     return retVal;
   };
 
-  private static isValidPr = (pr: Webhooks.WebhookPayloadPullRequestPullRequest | PullsGetResponse): string | null => {
+  private static isValidPr = (
+    pr: Webhooks.EventPayloads.WebhookPayloadPullRequestPullRequest | PullsGetResponseData,
+  ): string | null => {
     // Merge automatically only when pull request is created by the kiali-bot
     if (pr.user.login !== process.env.KIALI_BOT_USER) {
       return `Pull #${pr.number} ignored because opener is not the expected user`;
@@ -128,14 +136,17 @@ export default class VersionBumpMerger extends Behavior {
       return `Pull #${pr.number} ignored because it's already merged`;
     }
 
-    if ((pr as PullsGetResponse).draft) {
+    if ((pr as PullsGetResponseData).draft) {
       return `Pull #${pr.number} ignored because it's a draft`;
     }
 
     return null;
   };
 
-  private isPrChecksOk = async (api: GitHubAPI, pr: PullsGetResponse): Promise<boolean> => {
+  private isPrChecksOk = async (
+    api: InstanceType<typeof ProbotOctokit>,
+    pr: PullsGetResponseData,
+  ): Promise<boolean> => {
     const logFields = { pr_number: pr.number, ...VersionBumpMerger.LOG_FIELDS };
 
     const checksResponse = await api.checks.listForRef({
@@ -164,7 +175,7 @@ export default class VersionBumpMerger extends Behavior {
     return true;
   };
 
-  private isPrMergeable = (pr: PullsGetResponse): boolean => {
+  private isPrMergeable = (pr: PullsGetResponseData): boolean => {
     const logFields = { pr_number: pr.number, ...VersionBumpMerger.LOG_FIELDS };
 
     const error = VersionBumpMerger.isValidPr(pr);
@@ -181,7 +192,10 @@ export default class VersionBumpMerger extends Behavior {
     return true;
   };
 
-  private isPrStatusOk = async (api: GitHubAPI, pr: PullsGetResponse): Promise<boolean> => {
+  private isPrStatusOk = async (
+    api: InstanceType<typeof ProbotOctokit>,
+    pr: PullsGetResponseData,
+  ): Promise<boolean> => {
     const logFields = { pr_number: pr.number, ...VersionBumpMerger.LOG_FIELDS };
 
     const statusResponse = await api.repos.getCombinedStatusForRef({
@@ -210,7 +224,9 @@ export default class VersionBumpMerger extends Behavior {
     return true;
   };
 
-  private prCreatedHandler = async (context: Context<Webhooks.WebhookPayloadPullRequest>): Promise<void> => {
+  private prCreatedHandler = async (
+    context: Context<Webhooks.EventPayloads.WebhookPayloadPullRequest>,
+  ): Promise<void> => {
     const pull = context.payload.pull_request;
     context.log.debug(VersionBumpMerger.LOG_FIELDS, `Pull #${pull.number} was just opened`);
 
@@ -252,7 +268,7 @@ export default class VersionBumpMerger extends Behavior {
     }
   };
 
-  private mergePr = async (context: Context, pr: PullsGetResponse): Promise<boolean> => {
+  private mergePr = async (context: Context, pr: PullsGetResponseData): Promise<boolean> => {
     const api = context.github;
     const logFields = { pr_number: pr.number, ...VersionBumpMerger.LOG_FIELDS };
 
@@ -262,7 +278,7 @@ export default class VersionBumpMerger extends Behavior {
     const mergeResponse = await api.pulls.merge({
       owner: pr.base.repo.owner.login,
       repo: pr.base.repo.name,
-      number: pr.number,
+      pull_number: pr.number,
       sha: pr.head.sha,
       merge_method: configs.merge_method,
     });
