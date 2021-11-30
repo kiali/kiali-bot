@@ -1,4 +1,4 @@
-import { Application, Context } from 'probot';
+import { Context, Probot } from 'probot';
 import getConfig from 'probot-config';
 import Webhooks from '@octokit/webhooks';
 import { getProbotApp } from './globals';
@@ -33,7 +33,7 @@ interface ConfigsPerRepo {
 export class ConfigManager {
   private configs: ConfigsPerRepo;
 
-  public constructor(app: Application) {
+  public constructor(app: Probot) {
     app.on('push', this.pushHandler);
     this.configs = {};
   }

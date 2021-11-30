@@ -1,6 +1,6 @@
 import { Endpoints, PullsGetResponseData } from '@octokit/types';
 import Webhooks from '@octokit/webhooks';
-import { Application, Context } from 'probot';
+import { Context, Probot } from 'probot';
 import { ProbotOctokit } from 'probot/lib/octokit/probot-octokit';
 
 import { getConfigManager } from '../globals';
@@ -12,7 +12,7 @@ export default class VersionBumpMerger extends Behavior {
   private static LOG_FIELDS = { behavior: 'VersionBumpMerger' };
   private static MERGE_INTENTION_DELAY = 5000;
 
-  public constructor(app: Application) {
+  public constructor(app: Probot) {
     super(app);
     app.on('pull_request.opened', this.prCreatedHandler);
     app.on('check_run.completed', this.checkRunCompletedHandler);
@@ -57,7 +57,7 @@ export default class VersionBumpMerger extends Behavior {
       // If there are no PRs associated with the check, this does not means
       // that there is no PR. We need to query for it.
       context.log.debug(VersionBumpMerger.LOG_FIELDS, `Resort to search PRs for check run #${check.id}`);
-      prParams = await this.getPrForCommit(context.github, context.repo(), check.head_sha);
+      prParams = await this.getPrForCommit(context.octokit, context.repo(), check.head_sha);
     } else {
       // There is an array of PRs, but we expect only one matching PR. So, just
       // grab the first one in the array.
@@ -83,7 +83,7 @@ export default class VersionBumpMerger extends Behavior {
     }
 
     // Check if there is a PR associated with the commit.
-    const prParams = await this.getPrForCommit(context.github, context.repo(), context.payload.sha);
+    const prParams = await this.getPrForCommit(context.octokit, context.repo(), context.payload.sha);
     if (!prParams) {
       // No pull request associated with the commit. Nothing to do.
       return;
@@ -240,7 +240,7 @@ export default class VersionBumpMerger extends Behavior {
       VersionBumpMerger.LOG_FIELDS,
       `Adding comment about automatic merge to recently opened PR#${pull.number}`,
     );
-    context.github.issues.createComment(
+    context.octokit.issues.createComment(
       context.issue({
         body: 'This pull request will be merged automatically once all checks pass.',
       }),
@@ -248,7 +248,7 @@ export default class VersionBumpMerger extends Behavior {
   };
 
   private tryMergePr = async (context: Context, pullParams: PullsGetParams): Promise<void> => {
-    const api = context.github;
+    const api = context.octokit;
     const logFields = { pr_number: pullParams.pull_number, ...VersionBumpMerger.LOG_FIELDS };
 
     this.app.log.debug(logFields, `Trying to merge PR#${pullParams.pull_number} automatically`);
@@ -269,7 +269,7 @@ export default class VersionBumpMerger extends Behavior {
   };
 
   private mergePr = async (context: Context, pr: PullsGetResponseData): Promise<boolean> => {
-    const api = context.github;
+    const api = context.octokit;
     const logFields = { pr_number: pr.number, ...VersionBumpMerger.LOG_FIELDS };
 
     const configs = await getConfigManager().getConfigs(context);

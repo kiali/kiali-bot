@@ -1,4 +1,4 @@
-import { Application, Context } from 'probot';
+import { Context, Probot } from 'probot';
 import { ProbotOctokit } from 'probot/lib/octokit/probot-octokit';
 import { DeprecatedLogger as LoggerWithTarget } from 'probot/lib/types';
 import { Endpoints, IssuesGetMilestoneResponseData } from '@octokit/types';
@@ -11,7 +11,7 @@ type PullsGetParams = Endpoints['GET /repos/:owner/:repo/pulls/:pull_number']['p
 export default class MilestoneSetter extends Behavior {
   private static LOG_FIELDS = { behavior: 'MilestoneSetter' };
 
-  public constructor(app: Application) {
+  public constructor(app: Probot) {
     super(app);
     app.on('pull_request.closed', this.prClosedHandler);
     app.log.info('MilestoneSetter behavior is initialized');
@@ -105,7 +105,7 @@ export default class MilestoneSetter extends Behavior {
 
     if (MilestoneSetter.shouldAssignMilestone(context.log, pr)) {
       const prParams = context.repo({ pull_number: pr.number });
-      this.assignMilestone(context.github, prParams);
+      this.assignMilestone(context.octokit, prParams);
     }
   };
 

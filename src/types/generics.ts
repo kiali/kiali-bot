@@ -1,9 +1,9 @@
-import { Application } from 'probot';
+import { Probot } from 'probot';
 
 export abstract class Behavior {
-  protected app: Application;
+  protected app: Probot;
 
-  protected constructor(app: Application) {
+  protected constructor(app: Probot) {
     this.app = app;
   }
 }
