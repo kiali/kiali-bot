@@ -29,7 +29,7 @@
   "dependencies": {
     "@octokit/rest": "^16.42.2",
     "moment": "^2.27.0",
-    "probot": "^9.13.0",
+    "probot": "^9.15.1",
     "probot-config": "^1.1.0"
   },
   "devDependencies": {
@@ -52,7 +52,7 @@
     "typescript": "^3.9.7"
   },
   "engines": {
-    "node": ">= 10.13"
+    "node": ">= 10.21"
   },
   "jest": {
     "testEnvironment": "node"
