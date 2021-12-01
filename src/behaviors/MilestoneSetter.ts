@@ -1,12 +1,17 @@
 import { Context, Probot } from 'probot';
 import { ProbotOctokit } from 'probot/lib/octokit/probot-octokit';
 import { DeprecatedLogger as LoggerWithTarget } from 'probot/lib/types';
-import { Endpoints, IssuesGetMilestoneResponseData } from '@octokit/types';
+import { Endpoints } from '@octokit/types';
 import Webhooks from '@octokit/webhooks';
 import { Behavior } from '../types/generics';
 import { getCurrentSprintEndDate } from '../utils/SprintDates';
 
-type PullsGetParams = Endpoints['GET /repos/:owner/:repo/pulls/:pull_number']['parameters'];
+type PullsGetParams = Endpoints['GET /repos/{owner}/{repo}/pulls/{pull_number}']['parameters'];
+
+interface MilestoneData {
+  number: number;
+  title: string;
+}
 
 export default class MilestoneSetter extends Behavior {
   private static LOG_FIELDS = { behavior: 'MilestoneSetter' };
@@ -53,11 +58,11 @@ export default class MilestoneSetter extends Behavior {
     api: InstanceType<typeof ProbotOctokit>,
     prParams: PullsGetParams,
     version: string,
-  ): Promise<IssuesGetMilestoneResponseData | null> => {
+  ): Promise<MilestoneData | null> => {
     const logFields = { pr_number: prParams.pull_number, repo: prParams.repo, ...MilestoneSetter.LOG_FIELDS };
 
     // Check if milestone already exists
-    const milestonesResponse = await api.issues.listMilestonesForRepo({
+    const milestonesResponse = await api.issues.listMilestones({
       owner: prParams.owner,
       repo: prParams.repo,
       direction: 'desc',
@@ -112,11 +117,11 @@ export default class MilestoneSetter extends Behavior {
   private resolveBackendMilestone = async (
     api: InstanceType<typeof ProbotOctokit>,
     prParams: PullsGetParams,
-  ): Promise<IssuesGetMilestoneResponseData | null> => {
+  ): Promise<MilestoneData | null> => {
     const logFields = { pr_number: prParams.pull_number, repo: prParams.repo, ...MilestoneSetter.LOG_FIELDS };
 
     // Get main Makefile to find the current version in it.
-    const contentsResponse = await api.repos.getContents({
+    const contentsResponse = await api.repos.getContent({
       owner: prParams.owner,
       repo: prParams.repo,
       path: 'Makefile',
@@ -130,7 +135,7 @@ export default class MilestoneSetter extends Behavior {
       return null;
     }
 
-    const contents = Array.isArray(contentsResponse.data) ? '' : (contentsResponse.data.content as string);
+    const contents = 'content' in contentsResponse.data ? contentsResponse.data.content : '';
     const buff = Buffer.from(contents, 'base64');
     const file = buff.toString('utf8');
 
@@ -152,11 +157,11 @@ export default class MilestoneSetter extends Behavior {
   private resolveFrontendMilestone = async (
     api: InstanceType<typeof ProbotOctokit>,
     prParams: PullsGetParams,
-  ): Promise<IssuesGetMilestoneResponseData | null> => {
+  ): Promise<MilestoneData | null> => {
     const logFields = { pr_number: prParams.pull_number, repo: prParams.repo, ...MilestoneSetter.LOG_FIELDS };
 
     // Get main Makefile to find the current version in it.
-    const contentsResponse = await api.repos.getContents({
+    const contentsResponse = await api.repos.getContent({
       owner: prParams.owner,
       repo: prParams.repo,
       path: 'package.json',
@@ -170,7 +175,7 @@ export default class MilestoneSetter extends Behavior {
       return null;
     }
 
-    const contents = Array.isArray(contentsResponse.data) ? '' : (contentsResponse.data.content as string);
+    const contents = 'content' in contentsResponse.data ? (contentsResponse.data.content as string) : '';
     const buff = Buffer.from(contents, 'base64');
     const file = buff.toString('utf8');
 
@@ -190,7 +195,7 @@ export default class MilestoneSetter extends Behavior {
   private resolveMilestoneToSet = async (
     api: InstanceType<typeof ProbotOctokit>,
     prParams: PullsGetParams,
-  ): Promise<IssuesGetMilestoneResponseData | null> => {
+  ): Promise<MilestoneData | null> => {
     if (prParams.repo === process.env.BACKEND_REPO_NAME) {
       return this.resolveBackendMilestone(api, prParams);
     } else if (prParams.repo === process.env.FRONTEND_REPO_NAME) {

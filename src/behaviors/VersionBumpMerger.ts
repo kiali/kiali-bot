@@ -1,4 +1,4 @@
-import { Endpoints, PullsGetResponseData } from '@octokit/types';
+import { Endpoints } from '@octokit/types';
 import Webhooks from '@octokit/webhooks';
 import { Context, Probot } from 'probot';
 import { ProbotOctokit } from 'probot/lib/octokit/probot-octokit';
@@ -6,7 +6,29 @@ import { ProbotOctokit } from 'probot/lib/octokit/probot-octokit';
 import { getConfigManager } from '../globals';
 import { Behavior } from '../types/generics';
 
-type PullsGetParams = Endpoints['GET /repos/:owner/:repo/pulls/:pull_number']['parameters'];
+type PullsGetParams = Endpoints['GET /repos/{owner}/{repo}/pulls/{pull_number}']['parameters'];
+
+interface PullRequestData {
+  base: {
+    repo: {
+      owner: {
+        login: string;
+      };
+      name: string;
+    };
+  };
+  head: {
+    sha: string;
+  };
+  user: {
+    login: string;
+  } | null;
+  draft?: boolean;
+  merged: boolean;
+  mergeable: boolean | null;
+  number: number;
+  title: string;
+}
 
 export default class VersionBumpMerger extends Behavior {
   private static LOG_FIELDS = { behavior: 'VersionBumpMerger' };
@@ -21,7 +43,7 @@ export default class VersionBumpMerger extends Behavior {
     app.log.info('VersionBumpMerger behavior is initialized');
   }
 
-  private approvePr = async (api: InstanceType<typeof ProbotOctokit>, pr: PullsGetResponseData): Promise<boolean> => {
+  private approvePr = async (api: InstanceType<typeof ProbotOctokit>, pr: PullRequestData): Promise<boolean> => {
     const logFields = { pr_number: pr.number, ...VersionBumpMerger.LOG_FIELDS };
 
     this.app.log(logFields, `Approving PR#${pr.number}...`);
@@ -108,7 +130,7 @@ export default class VersionBumpMerger extends Behavior {
     }
 
     let retVal: PullsGetParams | null = null;
-    results.data.items.forEach((item: any) => {
+    results.data.items.forEach((item) => {
       // We return the PR that is placed in "our" repo.
       // Using the pull request repo URL to identify it.
       if (item.repository_url === `https://api.github.com/repos/${repo.owner}/${repo.repo}`) {
@@ -119,11 +141,9 @@ export default class VersionBumpMerger extends Behavior {
     return retVal;
   };
 
-  private static isValidPr = (
-    pr: Webhooks.EventPayloads.WebhookPayloadPullRequestPullRequest | PullsGetResponseData,
-  ): string | null => {
+  private static isValidPr = (pr: PullRequestData): string | null => {
     // Merge automatically only when pull request is created by the kiali-bot
-    if (pr.user.login !== process.env.KIALI_BOT_USER) {
+    if (pr.user != null && pr.user.login !== process.env.KIALI_BOT_USER) {
       return `Pull #${pr.number} ignored because opener is not the expected user`;
     }
 
@@ -136,17 +156,14 @@ export default class VersionBumpMerger extends Behavior {
       return `Pull #${pr.number} ignored because it's already merged`;
     }
 
-    if ((pr as PullsGetResponseData).draft) {
+    if (pr.draft) {
       return `Pull #${pr.number} ignored because it's a draft`;
     }
 
     return null;
   };
 
-  private isPrChecksOk = async (
-    api: InstanceType<typeof ProbotOctokit>,
-    pr: PullsGetResponseData,
-  ): Promise<boolean> => {
+  private isPrChecksOk = async (api: InstanceType<typeof ProbotOctokit>, pr: PullRequestData): Promise<boolean> => {
     const logFields = { pr_number: pr.number, ...VersionBumpMerger.LOG_FIELDS };
 
     const checksResponse = await api.checks.listForRef({
@@ -175,7 +192,7 @@ export default class VersionBumpMerger extends Behavior {
     return true;
   };
 
-  private isPrMergeable = (pr: PullsGetResponseData): boolean => {
+  private isPrMergeable = (pr: PullRequestData): boolean => {
     const logFields = { pr_number: pr.number, ...VersionBumpMerger.LOG_FIELDS };
 
     const error = VersionBumpMerger.isValidPr(pr);
@@ -192,10 +209,7 @@ export default class VersionBumpMerger extends Behavior {
     return true;
   };
 
-  private isPrStatusOk = async (
-    api: InstanceType<typeof ProbotOctokit>,
-    pr: PullsGetResponseData,
-  ): Promise<boolean> => {
+  private isPrStatusOk = async (api: InstanceType<typeof ProbotOctokit>, pr: PullRequestData): Promise<boolean> => {
     const logFields = { pr_number: pr.number, ...VersionBumpMerger.LOG_FIELDS };
 
     const statusResponse = await api.repos.getCombinedStatusForRef({
@@ -268,7 +282,7 @@ export default class VersionBumpMerger extends Behavior {
     }
   };
 
-  private mergePr = async (context: Context, pr: PullsGetResponseData): Promise<boolean> => {
+  private mergePr = async (context: Context, pr: PullRequestData): Promise<boolean> => {
     const api = context.octokit;
     const logFields = { pr_number: pr.number, ...VersionBumpMerger.LOG_FIELDS };
 
