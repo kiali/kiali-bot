@@ -1,6 +1,5 @@
 import { Context, Probot } from 'probot';
 import getConfig from 'probot-config';
-import Webhooks from '@octokit/webhooks';
 import { getProbotApp } from './globals';
 
 const DEFAULT_CONFIG: Configs = {
@@ -38,7 +37,7 @@ export class ConfigManager {
     this.configs = {};
   }
 
-  private pushHandler = async (context: Context<Webhooks.EventPayloads.WebhookPayloadPush>): Promise<void> => {
+  private pushHandler = async (context: Context<'push'>): Promise<void> => {
     // Only listen for changes in master branch.
     if (context.payload.ref !== 'refs/heads/master') {
       return;

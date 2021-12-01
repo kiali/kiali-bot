@@ -1,5 +1,4 @@
 import { Endpoints } from '@octokit/types';
-import Webhooks from '@octokit/webhooks';
 import { Context, Probot } from 'probot';
 import { ProbotOctokit } from 'probot/lib/octokit/probot-octokit';
 
@@ -24,7 +23,7 @@ interface PullRequestData {
     login: string;
   } | null;
   draft?: boolean;
-  merged: boolean;
+  merged: boolean | null;
   mergeable: boolean | null;
   number: number;
   title: string;
@@ -62,9 +61,7 @@ export default class VersionBumpMerger extends Behavior {
     return true;
   };
 
-  private checkRunCompletedHandler = async (
-    context: Context<Webhooks.EventPayloads.WebhookPayloadCheckRun>,
-  ): Promise<void> => {
+  private checkRunCompletedHandler = async (context: Context<'check_run.completed'>): Promise<void> => {
     context.log.trace(VersionBumpMerger.LOG_FIELDS, `Check run #${context.payload.check_run.id} has completed`);
 
     const check = context.payload.check_run;
@@ -96,9 +93,7 @@ export default class VersionBumpMerger extends Behavior {
     }
   };
 
-  private commitStatusChangedHandler = async (
-    context: Context<Webhooks.EventPayloads.WebhookPayloadStatus>,
-  ): Promise<void> => {
+  private commitStatusChangedHandler = async (context: Context<'status'>): Promise<void> => {
     if (context.payload.state !== 'success') {
       // If status is not 'success', no need to do any further actions
       return;
@@ -238,9 +233,7 @@ export default class VersionBumpMerger extends Behavior {
     return true;
   };
 
-  private prCreatedHandler = async (
-    context: Context<Webhooks.EventPayloads.WebhookPayloadPullRequest>,
-  ): Promise<void> => {
+  private prCreatedHandler = async (context: Context<'pull_request.opened'>): Promise<void> => {
     const pull = context.payload.pull_request;
     context.log.debug(VersionBumpMerger.LOG_FIELDS, `Pull #${pull.number} was just opened`);
 

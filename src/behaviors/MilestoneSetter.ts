@@ -2,7 +2,6 @@ import { Context, Probot } from 'probot';
 import { ProbotOctokit } from 'probot/lib/octokit/probot-octokit';
 import { DeprecatedLogger as LoggerWithTarget } from 'probot/lib/types';
 import { Endpoints } from '@octokit/types';
-import Webhooks from '@octokit/webhooks';
 import { Behavior } from '../types/generics';
 import { getCurrentSprintEndDate } from '../utils/SprintDates';
 
@@ -11,6 +10,17 @@ type PullsGetParams = Endpoints['GET /repos/{owner}/{repo}/pulls/{pull_number}']
 interface MilestoneData {
   number: number;
   title: string;
+}
+
+interface PullRequestData {
+  base: {
+    ref: string;
+  };
+  user: {
+    login: string;
+  };
+  merged: boolean | null;
+  number: number;
 }
 
 export default class MilestoneSetter extends Behavior {
@@ -102,9 +112,7 @@ export default class MilestoneSetter extends Behavior {
     return createMilestoneResponse.data;
   };
 
-  private prClosedHandler = async (
-    context: Context<Webhooks.EventPayloads.WebhookPayloadPullRequest>,
-  ): Promise<void> => {
+  private prClosedHandler = async (context: Context<'pull_request.closed'>): Promise<void> => {
     const pr = context.payload.pull_request;
     context.log.debug(MilestoneSetter.LOG_FIELDS, `Pull #${pr.number} was just closed`);
 
@@ -207,10 +215,7 @@ export default class MilestoneSetter extends Behavior {
     return null;
   };
 
-  private static shouldAssignMilestone = (
-    log: LoggerWithTarget,
-    pr: Webhooks.EventPayloads.WebhookPayloadPullRequestPullRequest,
-  ): boolean => {
+  private static shouldAssignMilestone = (log: LoggerWithTarget, pr: PullRequestData): boolean => {
     // Don't assign milestone if PR was not merged.
     if (!pr.merged) {
       log.info(
