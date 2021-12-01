@@ -68,18 +68,14 @@ export class ConfigManager {
     context.log.info(`Fetching configs for ${repoStr}`);
 
     const cfgRequest = getConfig<Configs>(context, 'kiali.yml', DEFAULT_CONFIG)
-      .then(
-        (configs: Configs): Configs => {
-          this.configs[repoStr] = { yaml: configs, request: null };
-          return configs;
-        },
-      )
-      .catch(
-        (e): Promise<Configs> => {
-          getProbotApp().log.error(`Failed to get config for repository ${repoStr}`);
-          return Promise.reject(e);
-        },
-      );
+      .then((configs: Configs): Configs => {
+        this.configs[repoStr] = { yaml: configs, request: null };
+        return configs;
+      })
+      .catch((e): Promise<Configs> => {
+        getProbotApp().log.error(`Failed to get config for repository ${repoStr}`);
+        return Promise.reject(e);
+      });
     this.configs[repoStr] = { yaml: DEFAULT_CONFIG, request: cfgRequest };
 
     return cfgRequest;
